@@ -2,6 +2,7 @@
 import { EventPublisher } from "./EventPublisher";
 import { expectType, expectError } from "tsd";
 
+// Sample Events interface for testing
 interface Events {
     // Intentionally with typed parameters and non-void return type for testing
     foo(a: number, b: boolean): boolean;

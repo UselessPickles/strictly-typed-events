@@ -1,5 +1,6 @@
 import { EventPublisher } from "./EventPublisher";
 
+// Sample Events interface for testing
 interface Events {
     onFoo(a: number, b: boolean): boolean;
     onBar(): string;
