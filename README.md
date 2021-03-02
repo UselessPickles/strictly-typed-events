@@ -1,4 +1,5 @@
 [![npm version](https://img.shields.io/npm/v/ts-event-publisher.svg)](https://www.npmjs.com/package/ts-event-publisher)
+[![Join the chat at https://gitter.im/ts-enum-util/Lobby](https://badges.gitter.im/ts-enum-util/Lobby.svg)](https://gitter.im/UselessPickles/ts-event-publisher/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/UselessPickles/ts-event-publisher.svg?branch=main)](https://travis-ci.org/UselessPickles/ts-event-publisher)
 [![Coverage Status](https://coveralls.io/repos/github/UselessPickles/ts-event-publisher/badge.svg?branch=main)](https://coveralls.io/github/UselessPickles/ts-event-publisher?branch=main)
 
