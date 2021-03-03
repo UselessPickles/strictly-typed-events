@@ -6,7 +6,7 @@
 # ts-event-publisher
 
 A simple Event Publish/Subscription library designed for convenience and type-safety
-in typeScript projects.
+in TypeScript projects.
 
 # Contents
 
