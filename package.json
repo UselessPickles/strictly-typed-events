@@ -1,6 +1,6 @@
 {
     "name": "ts-event-publisher",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "description": "Event publish/subscribe library designed for convenience and type safety with TypeScript",
     "repository": {
         "type": "git",
