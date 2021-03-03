@@ -5,7 +5,8 @@
 
 # ts-event-publisher
 
-TODO
+A simple Event Publish/Subscription library designed for convenience and type-safety
+in typeScript projects.
 
 # Contents
 
@@ -21,7 +22,7 @@ TODO
 
 # Why? (example)
 
-TODO
+Coming soon...
 
 # Installation
 
@@ -33,4 +34,6 @@ npm i -s ts-event-publisher
 
 # Usage
 
-TODO
+Coming soon...
+
+Until then, consider looking at code documentation in the source code.
