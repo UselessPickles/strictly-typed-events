@@ -1,6 +1,6 @@
 // tslint:disable:no-unused-expression
-import { EventPublisher } from "./EventPublisher";
-import { WithEventPublisher } from "./WithEventPublisher";
+// NOTE: import from root/index to test against publicly exported types
+import { EventPublisher, WithEventPublisher } from "./";
 import { expectType } from "tsd";
 
 // Sample Events interface for testing
@@ -21,7 +21,6 @@ class Widget extends WithEventPublisher<Events> {
 // shared instance for tests
 const widget = new Widget();
 
-// Verify that the signature of the inherited "subscribe" and "unsubscribe"
-// methods are the same as the signature of the same methods on EventPublisher.
+// Verify that the signature of the inherited "subscribe" method is the same
+// as the signature of the same methods on EventPublisher.
 expectType<EventPublisher<Events>["subscribe"]>(widget.subscribe);
-expectType<EventPublisher<Events>["unsubscribe"]>(widget.unsubscribe);

@@ -81,8 +81,8 @@ describe("General publishing", () => {
     });
 });
 
-describe("Unsubscribe", () => {
-    test("unsubscribe(subscriptionId) unsubscribes from ALL events included in the subscription", () => {
+describe("Cancel subscription", () => {
+    test("Cancels handlers for ALL events included in the subscription", () => {
         const publisher = new EventPublisher<Events>();
 
         const fooForever = jest.fn();
@@ -96,7 +96,7 @@ describe("Unsubscribe", () => {
         });
 
         // WILL unsubscribe
-        const subscriptionId = publisher.subscribe({
+        const cancelSubscription = publisher.subscribe({
             onFoo: fooUnsubscribed,
             onBar: barUnsubscribed,
         });
@@ -106,7 +106,7 @@ describe("Unsubscribe", () => {
             onBar: barForever,
         });
 
-        // Publish both events once before unsubscribing
+        // Publish both events once before cancelling subscription
         publisher.publish.onFoo(42, true);
         publisher.publish.onBar();
 
@@ -116,8 +116,8 @@ describe("Unsubscribe", () => {
         expect(fooUnsubscribed).toHaveBeenCalledTimes(1);
         expect(barUnsubscribed).toHaveBeenCalledTimes(1);
 
-        // Unsubscribe, then publish both events again
-        publisher.unsubscribe(subscriptionId);
+        // Cancel subscription, then publish both events again
+        cancelSubscription();
         publisher.publish.onFoo(1337, false);
         publisher.publish.onBar();
 
@@ -129,108 +129,18 @@ describe("Unsubscribe", () => {
         expect(barForever).toHaveBeenCalledTimes(2);
     });
 
-    test("unsubscribe(subscriptionId, eventName) unsubscribes only the specified event in the subscription", () => {
+    test("Cancelling multiple times is ignored", () => {
         const publisher = new EventPublisher<Events>();
-
-        const fooForever = jest.fn();
-        const barForever = jest.fn();
-        const fooUnsubscribed = jest.fn();
-        const barNotUnsubscribed = jest.fn();
-
-        // will NOT unsubscribe
-        publisher.subscribe({
-            onFoo: fooForever,
-        });
-
-        // WILL unsubscribe
-        const subscriptionId = publisher.subscribe({
-            onFoo: fooUnsubscribed,
-            onBar: barNotUnsubscribed,
-        });
-
-        // will NOT unsubscribe
-        publisher.subscribe({
-            onBar: barForever,
-        });
-
-        // Publish both events once before unsubscribing
-        publisher.publish.onFoo(42, true);
-        publisher.publish.onBar();
-
-        // All handlers called
-        expect(fooForever).toHaveBeenCalledTimes(1);
-        expect(barForever).toHaveBeenCalledTimes(1);
-        expect(fooUnsubscribed).toHaveBeenCalledTimes(1);
-        expect(barNotUnsubscribed).toHaveBeenCalledTimes(1);
-
-        // Unsubscribe from only "onFoo", then publish both events again
-        publisher.unsubscribe(subscriptionId, "onFoo");
-        publisher.publish.onFoo(1337, false);
-        publisher.publish.onBar();
-
-        // unsubscribed handlers NOT called again
-        expect(fooUnsubscribed).toHaveBeenCalledTimes(1);
-        // still-subscribed handlers called again
-        expect(barNotUnsubscribed).toHaveBeenCalledTimes(2);
-        expect(fooForever).toHaveBeenCalledTimes(2);
-        expect(barForever).toHaveBeenCalledTimes(2);
-    });
-
-    test("Ignores unsubscription of an invalid ID (without event name)", () => {
-        const publisher = new EventPublisher<Events>();
-
-        // Before any subscriptions are created
-        expect(() => {
-            publisher.unsubscribe("invalid!");
-        }).not.toThrow();
-
-        publisher.subscribe({
-            onFoo: () => true,
-        });
-
-        // After a subscription is created
-        expect(() => {
-            publisher.unsubscribe("invalid!");
-        }).not.toThrow();
-    });
-
-    test("Ignores unsubscription of an invalid ID (with event name)", () => {
-        const publisher = new EventPublisher<Events>();
-
-        // Before any subscriptions are created
-        expect(() => {
-            publisher.unsubscribe("invalid!", "onFoo");
-        }).not.toThrow();
-
-        publisher.subscribe({
-            onFoo: () => true,
-        });
-
-        // After a subscription is created
-        expect(() => {
-            publisher.unsubscribe("invalid!", "onFoo");
-        }).not.toThrow();
-    });
-
-    test("Ignores unsubscription of irrelevant event for a given valid subscription", () => {
-        const publisher = new EventPublisher<Events>();
-
-        const subscriptionId = publisher.subscribe({
-            onFoo: () => true,
-        });
-
-        // Before a subscription is created for the specified event name
-        expect(() => {
-            publisher.unsubscribe(subscriptionId, "onBar");
-        }).not.toThrow();
-
-        publisher.subscribe({
+        const cancelSubscription = publisher.subscribe({
             onBar: () => "test",
         });
 
-        // After a subscription is created for the specified event name
+        // Cancel normally
+        cancelSubscription();
+
+        // Second cancel should not cause any errors
         expect(() => {
-            publisher.unsubscribe(subscriptionId, "onBar");
+            cancelSubscription();
         }).not.toThrow();
     });
 });

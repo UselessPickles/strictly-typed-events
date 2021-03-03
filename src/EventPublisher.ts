@@ -1,27 +1,13 @@
-export type AnyFunction = (...args: any) => void;
-
-export type EventsConstraint<Events> = Record<
-    Extract<keyof Events, string>,
-    AnyFunction
->;
-
-export type EventNames<Events extends EventsConstraint<Events>> = Extract<
-    keyof Events,
-    string
->;
-
-type PublishProxy<Events extends EventsConstraint<Events>> = {
-    [P in EventNames<Events>]: (...args: Parameters<Events[P]>) => void;
-};
-
-interface EventOptions<Handler extends AnyFunction> {
-    onSubscribe?(handler: Handler): void;
-}
-
-export interface SubscriptionOptions {
-    once?: boolean;
-    skipOnSubscribe?: boolean;
-}
+import {
+    AnyFunction,
+    EventsConstraint,
+    EventNames,
+    EventSource,
+    SubscriptionCanceller,
+    EventPublishProxy,
+    SubscriptionOptions,
+    EventsOptions,
+} from "./types.private";
 
 interface EventSubscription<Events extends EventsConstraint<Events>> {
     handler: Events[EventNames<Events>];
@@ -29,21 +15,12 @@ interface EventSubscription<Events extends EventsConstraint<Events>> {
     options: SubscriptionOptions;
 }
 
-export type EventsOptions<Events extends EventsConstraint<Events>> = {
-    readonly [P in EventNames<Events>]?: EventOptions<Events[P]>;
-};
-
-export interface EventSource<Events extends EventsConstraint<Events>> {
-    subscribe(Events: Partial<Events>): string;
-    unsubscribe(id: string, eventName?: EventNames<Events>): void;
-}
-
 export class EventPublisher<Events extends EventsConstraint<Events>>
     implements EventSource<Events> {
     /**
      * TODO
      */
-    public readonly publish: Readonly<PublishProxy<Events>>;
+    public readonly publish: EventPublishProxy<Events>;
 
     /**
      * Map of event name -> map of subscription ID -> event subscription info
@@ -73,7 +50,7 @@ export class EventPublisher<Events extends EventsConstraint<Events>>
                 const subscription = eventSubscriptions[subscriptionId];
 
                 if (subscription.options.once) {
-                    _this.unsubscribe(subscriptionId, eventName);
+                    _this.cancelSubscription(subscriptionId, eventName);
                 }
 
                 subscription.handler.apply(
@@ -85,7 +62,7 @@ export class EventPublisher<Events extends EventsConstraint<Events>>
     }
 
     private publishProxyGet(
-        target: PublishProxy<Events>,
+        target: EventPublishProxy<Events>,
         eventName: EventNames<Events>
     ): () => void {
         if (!target[eventName]) {
@@ -98,7 +75,7 @@ export class EventPublisher<Events extends EventsConstraint<Events>>
     }
 
     public constructor(private readonly options: EventsOptions<Events> = {}) {
-        this.publish = new Proxy({} as PublishProxy<Events>, {
+        this.publish = new Proxy({} as EventPublishProxy<Events>, {
             get: this.publishProxyGet.bind(this),
         });
     }
@@ -107,16 +84,16 @@ export class EventPublisher<Events extends EventsConstraint<Events>>
         name: EventName,
         handler: Events[EventName],
         options?: SubscriptionOptions
-    ): string;
+    ): SubscriptionCanceller;
     public subscribe(
         Events: Partial<Events>,
         options?: SubscriptionOptions
-    ): string;
+    ): SubscriptionCanceller;
     public subscribe(
         eventNameOrHandlers: EventNames<Events> | Partial<Events>,
         handlerOrOptions: Events[EventNames<Events>] | SubscriptionOptions = {},
         maybeOptions: SubscriptionOptions = {}
-    ): string {
+    ): SubscriptionCanceller {
         const subscriptionId = `subscription_${this
             .nextSubscriptionIdNumber++}`;
         let handlers: Partial<Events>;
@@ -159,7 +136,7 @@ export class EventPublisher<Events extends EventsConstraint<Events>>
                 const _this = this;
                 (eventOptions.onSubscribe as AnyFunction)(function (): any {
                     if (options.once) {
-                        _this.unsubscribe(subscriptionId, eventName);
+                        _this.cancelSubscription(subscriptionId, eventName);
                     }
 
                     return handler.apply(
@@ -170,18 +147,23 @@ export class EventPublisher<Events extends EventsConstraint<Events>>
             }
         }
 
-        return subscriptionId;
+        return this.cancelSubscription.bind(this, subscriptionId);
     }
 
-    public unsubscribe(id: string, eventName?: EventNames<Events>): void {
+    private cancelSubscription(
+        subscriptionId: string,
+        eventName?: EventNames<Events>
+    ): void {
         if (eventName) {
             if (this.subscriptions[eventName]) {
-                delete this.subscriptions[eventName]![id];
+                delete this.subscriptions[eventName]![subscriptionId];
             }
         } else {
             for (const subscribedEventName in this.subscriptions) {
                 if (this.subscriptions.hasOwnProperty(subscribedEventName)) {
-                    delete this.subscriptions[subscribedEventName]![id];
+                    delete this.subscriptions[subscribedEventName]![
+                        subscriptionId
+                    ];
                 }
             }
         }

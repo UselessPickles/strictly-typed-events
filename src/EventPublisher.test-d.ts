@@ -1,5 +1,6 @@
 // tslint:disable:no-unused-expression
-import { EventPublisher } from "./EventPublisher";
+// NOTE: import from root/index to test against publicly exported types
+import { EventPublisher, SubscriptionCanceller } from "./";
 import { expectType, expectError } from "tsd";
 
 // Sample Events interface for testing
@@ -112,10 +113,9 @@ const eventPublisher = new EventPublisher<Events>();
             once: true,
         }
     );
-}
 
-// unsubscribe()
-{
-    // unsubscribe from invalid event name
-    expectError(eventPublisher.unsubscribe("id", "invalid!"));
+    // returns a SubscriptionCanceller
+    expectType<SubscriptionCanceller>(
+        eventPublisher.subscribe("bar", () => undefined)
+    );
 }

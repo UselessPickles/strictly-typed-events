@@ -43,7 +43,7 @@ test("General sanity check", () => {
 
     // Will be unsubscribed.
     // Also testing short-hand subscription to a single event.
-    const subscriptionId = widget.subscribe("onFoo", fooUnsubscribed);
+    const cancelSubscription = widget.subscribe("onFoo", fooUnsubscribed);
 
     // One-time only subscription
     // (validating that subscription options are passed through)
@@ -75,7 +75,7 @@ test("General sanity check", () => {
     // One-time subscription not called again
     expect(fooOnce).toHaveBeenCalledTimes(1);
 
-    widget.unsubscribe(subscriptionId);
+    cancelSubscription();
     widget.triggerFoo(-1, true);
 
     // Still-subscribed handler called

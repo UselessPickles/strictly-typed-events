@@ -1,11 +1,12 @@
+import { EventPublisher } from "./EventPublisher";
 import {
-    EventPublisher,
     EventsOptions,
     EventsConstraint,
     EventSource,
     EventNames,
     SubscriptionOptions,
-} from "./EventPublisher";
+    SubscriptionCanceller,
+} from "./types.private";
 
 export class WithEventPublisher<Events extends EventsConstraint<Events>>
     implements EventSource<Events> {
@@ -21,19 +22,15 @@ export class WithEventPublisher<Events extends EventsConstraint<Events>>
         eventName: EventName,
         handler: Events[EventName],
         options?: SubscriptionOptions
-    ): string;
+    ): SubscriptionCanceller;
     public subscribe(
         handlers: Partial<Events>,
         options?: SubscriptionOptions
-    ): string;
-    public subscribe(): string {
+    ): SubscriptionCanceller;
+    public subscribe(): SubscriptionCanceller {
         return this.eventPublisher.subscribe.apply(
             this.eventPublisher,
             arguments as any
         );
-    }
-
-    public unsubscribe(id: string, eventName?: EventNames<Events>): void {
-        this.eventPublisher.unsubscribe(id, eventName);
     }
 }
