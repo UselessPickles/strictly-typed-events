@@ -45,6 +45,50 @@ interface EventSubscription<Events extends EventsConstraint<Events>> {
  * @template Events - An interface/type containing only methods, where each method
  *           name is the event name, and the method signatures is the signature
  *           for handlers of the event.
+ * @example
+ * ```
+ * class MyClass {
+ *     // Private EventPublisher gives your class the ability to publish
+ *     // events.
+ *     private eventPublisher = new EventPublisher<{
+ *         // Event definitions here.
+ *         // Add TSDoc comment here to explain when this event is called,
+ *         // document params, etc.
+ *         onNameChange(name: string): void;
+ *     }>();
+ *
+ *     // Expose the eventPublisher publicly, but only as an EventSource,
+ *     // so external code can only subscribe to events.
+ *     // Using asEventSource() allows the `events` field's type to be
+ *     // conveniently inferred, rather than needing to manually specify its
+ *     // type correctly.
+ *     public events = this.eventPublisher.asEventSource();
+ *
+ *     public setName(name: string): void {
+ *         this.name = name;
+ *         // publish the "onNameChange" event with the new name
+ *         this.publish.onNameChange(name);
+ *     }
+ * }
+ *
+ * // Sample instance
+ * const myInstance = new MyClass("Bob");
+ *
+ * // Subscribe to an event
+ * const cancelSubscription = myInstance.events.subscribe(
+ *     "onNameChange",
+ *     (name) => {
+ *         console.log(name);
+ *     }
+ * );
+ *
+ * // Trigger the event to be published, which will execute the above event
+ * // handler
+ * myInstance.setName("Joe");
+ *
+ * // Cancel the subscription
+ * cancelSubscription();
+ * ```
  */
 export class EventPublisher<Events extends EventsConstraint<Events>>
     implements EventSource<Events> {
@@ -166,7 +210,7 @@ export class EventPublisher<Events extends EventsConstraint<Events>>
      *
      *     // Expose the eventPublisher publicly, but only as an EventSource,
      *     // so external code can only subscribe to events.
-     *     // Usign asEventSource() allows the `events` field's type to be
+     *     // Using asEventSource() allows the `events` field's type to be
      *     // conveniently inferred, rather than needing to manually specify its
      *     // type correctly.
      *     public events = this.eventPublisher.asEventSource();
