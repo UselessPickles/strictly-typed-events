@@ -1,6 +1,6 @@
 // tslint:disable:no-unused-expression
 // NOTE: import from root/index to test against publicly exported types
-import { EventPublisher, SubscriptionCanceller } from "./";
+import { EventPublisher, SubscriptionCanceller, EventSource } from "./";
 import { expectType, expectError } from "tsd";
 
 // Sample Events interface for testing
@@ -51,6 +51,11 @@ const eventPublisher = new EventPublisher<Events>();
             bar(): void;
         }>
     >(eventPublisher.publish);
+}
+
+// asEventSource()
+{
+    expectType<EventSource<Events>>(eventPublisher.asEventSource());
 }
 
 // subscribe()

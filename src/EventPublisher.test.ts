@@ -6,6 +6,12 @@ interface Events {
     onBar(): string;
 }
 
+test("asEventSource()", () => {
+    const publisher = new EventPublisher<Events>();
+
+    expect(publisher.asEventSource()).toBe(publisher);
+});
+
 describe("General publishing", () => {
     test("Can publish without any subscribers", () => {
         const publisher = new EventPublisher<Events>();
