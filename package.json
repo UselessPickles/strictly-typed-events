@@ -1,14 +1,14 @@
 {
-    "name": "ts-event-publisher",
+    "name": "ts-event-emitter",
     "version": "0.0.1",
-    "description": "Event publish/subscribe library designed for convenience and type safety with TypeScript",
+    "description": "Event emit/subscribe library designed for convenience and type safety with TypeScript",
     "repository": {
         "type": "git",
-        "url": "https://github.com/UselessPickles/ts-event-publisher.git"
+        "url": "https://github.com/UselessPickles/ts-event-emitter.git"
     },
-    "homepage": "https://github.com/UselessPickles/ts-event-publisher",
+    "homepage": "https://github.com/UselessPickles/ts-event-emitter#readme",
     "bugs": {
-        "url": "https://github.com/UselessPickles/ts-event-publisher/issues"
+        "url": "https://github.com/UselessPickles/ts-event-emitter/issues"
     },
     "files": [
         "dist",
@@ -62,8 +62,10 @@
     "keywords": [
         "typescript",
         "event",
-        "publish",
-        "publisher",
+        "emit",
+        "emitter",
+        "subscribe",
+        "subscription",
         "dispatch",
         "dispatcher",
         "observe",
