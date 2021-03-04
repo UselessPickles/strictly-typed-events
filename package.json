@@ -1,5 +1,5 @@
 {
-    "name": "ts-event-emitter",
+    "name": "strictly-typed-events",
     "version": "0.0.2",
     "description": "Event emit/subscribe library designed for convenience and type safety with TypeScript",
     "repository": {

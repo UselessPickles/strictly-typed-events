@@ -26,10 +26,10 @@ Coming soon...
 
 # Installation
 
-Install via [NPM](https://www.npmjs.com/package/ts-event-emitter):
+Install via [NPM](https://www.npmjs.com/package/strictly-typed-events):
 
 ```
-npm i -s ts-event-emitter
+npm i -s strictly-typed-events
 ```
 
 # Usage
