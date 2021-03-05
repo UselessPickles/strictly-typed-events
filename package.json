@@ -1,6 +1,6 @@
 {
     "name": "strictly-typed-events",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "Event emit/subscribe library designed for convenience and type safety with TypeScript",
     "repository": {
         "type": "git",
