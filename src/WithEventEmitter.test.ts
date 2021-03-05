@@ -43,7 +43,7 @@ test("General sanity check", () => {
 
     // Will be cancelled.
     // Also testing short-hand subscription to a single event.
-    const cancelSubscription = widget.on("foo", fooCancelled);
+    const cancel = widget.on("foo", fooCancelled);
 
     // One-time only subscription
     // (validating that subscription options are passed through)
@@ -75,7 +75,7 @@ test("General sanity check", () => {
     // One-time subscription not called again
     expect(fooOnce).toHaveBeenCalledTimes(1);
 
-    cancelSubscription();
+    cancel();
     widget.triggerFoo(-1, true);
 
     // Still-subscribed handler called

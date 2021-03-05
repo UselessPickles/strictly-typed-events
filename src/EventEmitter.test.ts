@@ -101,8 +101,8 @@ describe("Cancel subscription", () => {
             foo: fooForever,
         });
 
-        // WILL unsubscribe
-        const cancelSubscription = emitter.on({
+        // WILL cancel
+        const cancel = emitter.on({
             foo: fooUnsubscribed,
             bar: barUnsubscribed,
         });
@@ -123,7 +123,7 @@ describe("Cancel subscription", () => {
         expect(barUnsubscribed).toHaveBeenCalledTimes(1);
 
         // Cancel subscription, then emit both events again
-        cancelSubscription();
+        cancel();
         emitter.emit.foo(1337, false);
         emitter.emit.bar();
 
@@ -137,16 +137,16 @@ describe("Cancel subscription", () => {
 
     test("Cancelling multiple times is ignored", () => {
         const emitter = new EventEmitter<Events>();
-        const cancelSubscription = emitter.on({
+        const cancel = emitter.on({
             bar: () => "test",
         });
 
         // Cancel normally
-        cancelSubscription();
+        cancel();
 
         // Second cancel should not cause any errors
         expect(() => {
-            cancelSubscription();
+            cancel();
         }).not.toThrow();
     });
 });

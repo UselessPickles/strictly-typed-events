@@ -50,7 +50,7 @@ interface EventSubscription<Events extends EventsConstraint<Events>> {
  * class MyClass {
  *     // Private EventEmitter gives your class the ability to emit
  *     // events.
- *     private eventEmitter = new EventEmitter<{
+ *     private emitter = new EventEmitter<{
  *         // Event definitions here.
  *         // Add TSDoc comment here to explain when this event is called,
  *         // document params, etc.
@@ -62,12 +62,12 @@ interface EventSubscription<Events extends EventsConstraint<Events>> {
  *     // Using asEventSource() allows the `events` field's type to be
  *     // conveniently inferred, rather than needing to manually specify its
  *     // type correctly.
- *     public events = this.eventEmitter.asEventSource();
+ *     public events = this.emitter.asEventSource();
  *
  *     public setName(name: string): void {
  *         this.name = name;
  *         // emit the "nameChanged" event with the new name
- *         this.eventEmitter.emit.nameChanged(name);
+ *         this.emitter.emit.nameChanged(name);
  *     }
  * }
  *
@@ -75,7 +75,7 @@ interface EventSubscription<Events extends EventsConstraint<Events>> {
  * const myInstance = new MyClass("Bob");
  *
  * // Subscribe to an event
- * const cancelSubscription = myInstance.events.on(
+ * const cancel = myInstance.events.on(
  *     "nameChanged",
  *     (name) => {
  *         console.log(name);
@@ -87,7 +87,7 @@ interface EventSubscription<Events extends EventsConstraint<Events>> {
  * myInstance.setName("Joe");
  *
  * // Cancel the subscription
- * cancelSubscription();
+ * cancel();
  * ```
  */
 export class EventEmitter<Events extends EventsConstraint<Events>>
@@ -142,7 +142,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
                 const subscription = eventSubscriptions[subscriptionId];
 
                 if (subscription.options.once) {
-                    _this.cancelSubscription(subscriptionId, eventName);
+                    _this.cancel(subscriptionId, eventName);
                 }
 
                 subscription.handler.apply(
@@ -204,7 +204,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      * class MyClass {
      *     // Private EventEmitter gives your class the ability to emit
      *     // events.
-     *     private eventEmitter = new EventEmitter<{
+     *     private emitter = new EventEmitter<{
      *         nameChanged(name: string): void;
      *     }>();
      *
@@ -213,7 +213,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      *     // Using asEventSource() allows the `events` field's type to be
      *     // conveniently inferred, rather than needing to manually specify its
      *     // type correctly.
-     *     public events = this.eventEmitter.asEventSource();
+     *     public events = this.emitter.asEventSource();
      * }
      * ```
      */
@@ -292,7 +292,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
                 // Ugly typecasting necessary to work around generics
                 (eventOptions.onSubscribe as AnyFunction)(function (): any {
                     if (options.once) {
-                        _this.cancelSubscription(subscriptionId, eventName);
+                        _this.cancel(subscriptionId, eventName);
                     }
 
                     // Call the handler, passing through all arguments
@@ -309,7 +309,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
 
         // NOTE: Avoiding using an arrow function here to optimize the
         //       transpiled code.
-        return this.cancelSubscription.bind(this, subscriptionId);
+        return this.cancel.bind(this, subscriptionId);
     }
 
     /**
@@ -329,7 +329,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      * @param eventName - Name of a specific event to cancel. Unspecified/undefined
      *        to unsubscribe all event handlers in the subscription.
      */
-    private cancelSubscription(
+    private cancel(
         subscriptionId: string,
         eventName?: EventNames<Events>
     ): void {
