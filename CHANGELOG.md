@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Basic usage examples/patterns in README.
+
 ### Changed
 
 -   Renamed project to `strictly-typed-events` to match NPM package name.
