@@ -4,11 +4,11 @@
     "description": "Event emit/subscribe library designed for convenience and type safety with TypeScript",
     "repository": {
         "type": "git",
-        "url": "https://github.com/UselessPickles/ts-event-emitter.git"
+        "url": "https://github.com/UselessPickles/strictly-typed-events.git"
     },
-    "homepage": "https://github.com/UselessPickles/ts-event-emitter#readme",
+    "homepage": "https://github.com/UselessPickles/strictly-typed-events#readme",
     "bugs": {
-        "url": "https://github.com/UselessPickles/ts-event-emitter/issues"
+        "url": "https://github.com/UselessPickles/strictly-typed-events/issues"
     },
     "files": [
         "dist",
@@ -61,7 +61,11 @@
     },
     "keywords": [
         "typescript",
+        "strict",
+        "strictly",
+        "typed",
         "event",
+        "events",
         "emit",
         "emitter",
         "subscribe",

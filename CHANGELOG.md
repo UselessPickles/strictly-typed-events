@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+-   Renamed project to `strictly-typed-events` to match NPM package name.
 -   Renamed `EventSource.subscribe` method to `EventSource.on` (cascades down to all implementations of the interface too).
 -   Renamed `EventPublisher` to `EventEmitter`.
     -   Renamed property `publish` to `emit`.
@@ -38,7 +39,7 @@ TODO:
 -   Write good README content (sorry; source code documentation will have to suffice for now).
 -   Use rollup to bundle code?
 
-[unreleased]: https://github.com/UselessPickles/ts-event-emitter/compare/v0.0.3...HEAD
-[0.0.3]: https://github.com/UselessPickles/ts-event-emitter/compare/v0.0.2...v0.0.3
-[0.0.2]: https://github.com/UselessPickles/ts-event-emitter/compare/v0.0.1...v0.0.2
-[0.0.1]: https://github.com/UselessPickles/ts-event-emitter/tree/v0.0.1
+[unreleased]: https://github.com/UselessPickles/strictly-typed-events/compare/v0.0.3...HEAD
+[0.0.3]: https://github.com/UselessPickles/strictly-typed-events/compare/v0.0.2...v0.0.3
+[0.0.2]: https://github.com/UselessPickles/strictly-typed-events/compare/v0.0.1...v0.0.2
+[0.0.1]: https://github.com/UselessPickles/strictly-typed-events/tree/v0.0.1
