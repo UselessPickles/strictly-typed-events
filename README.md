@@ -36,8 +36,8 @@ npm i -s strictly-typed-events
 Despite the many event libraries already available on `npm`, I could not find
 one that met my desires. My goal is to easily setup a class that emits
 well-defined events, with type-safety while emitting and subscribing/handling,
-using minimal boilerplate, where it is simple and intuitive both to emit the events,
-and subscribe to (and cancel subscriptions to) events.
+using minimal boilerplate. It should also be simple and intuitive to emit the
+events, subscribe to events, and cancel subscriptions to events.
 
 Some design goals:
 
@@ -58,16 +58,17 @@ style comments on all types/classes/methods/etc.) for full details.
 
 ## Subscribing and Cancelling Subscriptions
 
-For the following examples, assume there is a variable `source` that implements this library's `EventSource` interface (has the `on()` method to subscribe to events).
+For the following examples, assume there is a variable `source` that implements
+this library's `EventSource` interface (has the `on()` method to subscribe to events).
 
 Subscribe to one event at a time:
 
 ```ts
-// Hold onto the "cancel" function returned when subscribing.
 // Event name will be type-safe based on valid event names for the
-// event source (IDE can auto-complet it!).
+// event source (IDE can auto-complete it!).
 // Event handler parameter types will be inferred based on
 // signature of event.
+// Hold onto the "cancel" function returned when subscribing.
 const cancel = source.on("nameChanged", (newname, oldName) => {
     // do stuff
 });
