@@ -1,3 +1,3 @@
 export * from "./types.public";
-export * from "./EventPublisher";
-export * from "./WithEventPublisher";
+export * from "./EventEmitter";
+export * from "./WithEventEmitter";

@@ -32,14 +32,14 @@ export type EventNames<Events extends EventsConstraint<Events>> = Extract<
 >;
 
 /**
- * An interface for a proxy for publishing events for a given Events interface.
+ * An interface for a proxy for emitting events for a given Events interface.
  * For each event defined in the Event interface, this proxy has an identically
  * named method used to publish to all subscribed handlers for that event.
  * The signature of each method is nearly identical to that of the corresponding
  * event, except that the return type is `void`.
  * @template Events - an Events interface (see {@link EventsConstraint}).
  */
-export type EventPublishProxy<Events extends EventsConstraint<Events>> = {
+export type EventEmitProxy<Events extends EventsConstraint<Events>> = {
     readonly [P in EventNames<Events>]: (
         ...args: Parameters<Events[P]>
     ) => void;
@@ -58,7 +58,7 @@ export interface SubscriptionOptions {
     /**
      * If true, then event handlers in this subscription will NOT be called
      * automatically upon subscribing.
-     * NOTE: Only relevant if the EventPublisher is configured to call the event
+     * NOTE: Only relevant if the EventEmitter is configured to call the event
      * handler in an [onSubscribe handler]{@link EventOptions#onSubscribe}.
      */
     skipOnSubscribe?: boolean;
@@ -83,7 +83,7 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
      * @param options - Subscription options.
      * @returns A callback function that, when called, will cancel this subscription.
      */
-    subscribe<EventName extends EventNames<Events>>(
+    on<EventName extends EventNames<Events>>(
         name: EventName,
         handler: Events[EventName],
         options?: SubscriptionOptions
@@ -98,7 +98,7 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
      *        (applied to ALL event handlers in the subscription)
      * @returns A callback function that, when called, will cancel this subscription.
      */
-    subscribe(
+    on(
         handlers: Partial<Events>,
         options?: SubscriptionOptions
     ): SubscriptionCanceller;
@@ -108,24 +108,24 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
  * Helper type used to infer the exact {@link EventSource} type from any type that
  * extends EventSource.
  * This is useful for deriving the EventSource type from an existing
- * {@link EventPublisher} without explicitly knowing the Events interface that
+ * {@link EventEmitter} without explicitly knowing the Events interface that
  * was used.
  *
- * See also: {@link EventPublisher#asEventSource}
+ * See also: {@link EventEmitter#asEventSource}
  *
  * @example
  * ```
  * class MyClass {
- *     // Private EventPublisher gives your class the ability to publish
+ *     // Private eventEmitter gives your class the ability to publish
  *     // events.
- *     private eventPublisher = new EventPublisher<{
- *         onNameChange(name: string): void;
+ *     private eventEmitter = new EventEmitter<{
+ *         nameChanged(name: string): void;
  *     }>();
  *
  *     // Use EventSourceType<> to extract the correct EventSource type from
- *     // the private `eventPublisher`.
- *     public getEventSource(): EventSourceType<MyClass["eventPublisher"]> {
- *         return this.eventPublisher;
+ *     // the private `eventEmitter`.
+ *     public getEventSource(): EventSourceType<MyClass["eventEmitter"]> {
+ *         return this.eventEmitter;
  *     }
  *  }
  * ```

@@ -1,47 +1,47 @@
-import { EventPublisher } from "./EventPublisher";
+import { EventEmitter } from "./EventEmitter";
 
 // Sample Events interface for testing
 interface Events {
-    onFoo(a: number, b: boolean): boolean;
-    onBar(): string;
+    foo(a: number, b: boolean): boolean;
+    bar(): string;
 }
 
 test("asEventSource()", () => {
-    const publisher = new EventPublisher<Events>();
+    const emitter = new EventEmitter<Events>();
 
-    expect(publisher.asEventSource()).toBe(publisher);
+    expect(emitter.asEventSource()).toBe(emitter);
 });
 
-describe("General publishing", () => {
-    test("Can publish without any subscribers", () => {
-        const publisher = new EventPublisher<Events>();
+describe("General emitting", () => {
+    test("Can emit without any subscribers", () => {
+        const emitter = new EventEmitter<Events>();
 
         expect(() => {
-            publisher.publish.onFoo(10, true);
+            emitter.emit.foo(10, true);
         }).not.toThrow();
     });
 
-    test("Publishes to all subscribers (and passes parameters)", () => {
-        const publisher = new EventPublisher<Events>();
+    test("Emits to all subscribers (and passes parameters)", () => {
+        const emitter = new EventEmitter<Events>();
 
         const foo1 = jest.fn();
         const foo2 = jest.fn();
         const bar1 = jest.fn();
         const bar2 = jest.fn();
 
-        publisher.subscribe({
-            onFoo: foo1,
+        emitter.on({
+            foo: foo1,
         });
 
-        publisher.subscribe({
-            onFoo: foo2,
-            onBar: bar1,
+        emitter.on({
+            foo: foo2,
+            bar: bar1,
         });
 
-        publisher.subscribe({
+        emitter.on({
             // explicit undefied event handler should not make anything blow up
-            onFoo: undefined,
-            onBar: bar2,
+            foo: undefined,
+            bar: bar2,
         });
 
         // None of the handlers are called yet
@@ -50,8 +50,8 @@ describe("General publishing", () => {
         expect(bar1).not.toHaveBeenCalled();
         expect(bar2).not.toHaveBeenCalled();
 
-        // Publish "onFoo"
-        expect(publisher.publish.onFoo(42, true)).toBe(undefined);
+        // Emit "foo"
+        expect(emitter.emit.foo(42, true)).toBe(undefined);
 
         // "foo" handlers are called appropriately
         expect(foo1).toHaveBeenCalledTimes(1);
@@ -59,12 +59,12 @@ describe("General publishing", () => {
         expect(foo2).toHaveBeenCalledTimes(1);
         expect(foo2).toHaveBeenLastCalledWith(42, true);
 
-        // "bar" handlers not called by publishing "onFoo"
+        // "bar" handlers not called by emitting "foo"
         expect(bar1).not.toHaveBeenCalled();
         expect(bar2).not.toHaveBeenCalled();
 
-        // Publish "onBar"
-        publisher.publish.onBar();
+        // Emit "bar"
+        emitter.emit.bar();
 
         // "bar" handlers are called appropriately
         expect(bar1).toHaveBeenCalledTimes(1);
@@ -72,12 +72,12 @@ describe("General publishing", () => {
         expect(bar2).toHaveBeenCalledTimes(1);
         expect(bar2).toHaveBeenLastCalledWith();
 
-        // "foo" handlers not called by publishing "onBar"
+        // "foo" handlers not called by emitting "bar"
         expect(foo1).toHaveBeenCalledTimes(1);
         expect(foo2).toHaveBeenCalledTimes(1);
 
-        // Publish "onFoo" again with different params
-        publisher.publish.onFoo(1337, false);
+        // Emit "foo" again with different params
+        emitter.emit.foo(1337, false);
 
         // "foo" handlers are called appropriately
         expect(foo1).toHaveBeenCalledTimes(2);
@@ -89,7 +89,7 @@ describe("General publishing", () => {
 
 describe("Cancel subscription", () => {
     test("Cancels handlers for ALL events included in the subscription", () => {
-        const publisher = new EventPublisher<Events>();
+        const emitter = new EventEmitter<Events>();
 
         const fooForever = jest.fn();
         const barForever = jest.fn();
@@ -97,24 +97,24 @@ describe("Cancel subscription", () => {
         const barUnsubscribed = jest.fn();
 
         // will NOT unsubscribe
-        publisher.subscribe({
-            onFoo: fooForever,
+        emitter.on({
+            foo: fooForever,
         });
 
         // WILL unsubscribe
-        const cancelSubscription = publisher.subscribe({
-            onFoo: fooUnsubscribed,
-            onBar: barUnsubscribed,
+        const cancelSubscription = emitter.on({
+            foo: fooUnsubscribed,
+            bar: barUnsubscribed,
         });
 
         // will NOT unsubscribe
-        publisher.subscribe({
-            onBar: barForever,
+        emitter.on({
+            bar: barForever,
         });
 
-        // Publish both events once before cancelling subscription
-        publisher.publish.onFoo(42, true);
-        publisher.publish.onBar();
+        // Emit both events once before cancelling subscription
+        emitter.emit.foo(42, true);
+        emitter.emit.bar();
 
         // All handlers called
         expect(fooForever).toHaveBeenCalledTimes(1);
@@ -122,10 +122,10 @@ describe("Cancel subscription", () => {
         expect(fooUnsubscribed).toHaveBeenCalledTimes(1);
         expect(barUnsubscribed).toHaveBeenCalledTimes(1);
 
-        // Cancel subscription, then publish both events again
+        // Cancel subscription, then emit both events again
         cancelSubscription();
-        publisher.publish.onFoo(1337, false);
-        publisher.publish.onBar();
+        emitter.emit.foo(1337, false);
+        emitter.emit.bar();
 
         // unsubscribed handlers NOT called again
         expect(fooUnsubscribed).toHaveBeenCalledTimes(1);
@@ -136,9 +136,9 @@ describe("Cancel subscription", () => {
     });
 
     test("Cancelling multiple times is ignored", () => {
-        const publisher = new EventPublisher<Events>();
-        const cancelSubscription = publisher.subscribe({
-            onBar: () => "test",
+        const emitter = new EventEmitter<Events>();
+        const cancelSubscription = emitter.on({
+            bar: () => "test",
         });
 
         // Cancel normally
@@ -153,13 +153,13 @@ describe("Cancel subscription", () => {
 
 describe("Event option: `onSubscribe`", () => {
     test("Handlers can be called immediately upon subscription via onSubscribe (individual subscription can opt out)", () => {
-        const publisher = new EventPublisher<Events>({
-            onFoo: {
+        const emitter = new EventEmitter<Events>({
+            foo: {
                 onSubscribe: (handler) => {
                     handler(42, true);
                 },
             },
-            onBar: {
+            bar: {
                 onSubscribe: (handler) => {
                     handler();
                 },
@@ -171,22 +171,22 @@ describe("Event option: `onSubscribe`", () => {
         const fooSkipOnSubscribe = jest.fn();
         const barSkipOnSubscribe = jest.fn();
 
-        publisher.subscribe({
-            onFoo: fooOnSubscribe,
-            onBar: barOnSubscribe,
+        emitter.on({
+            foo: fooOnSubscribe,
+            bar: barOnSubscribe,
         });
 
-        publisher.subscribe(
+        emitter.on(
             {
-                onFoo: fooSkipOnSubscribe,
-                onBar: barSkipOnSubscribe,
+                foo: fooSkipOnSubscribe,
+                bar: barSkipOnSubscribe,
             },
             {
                 skipOnSubscribe: true,
             }
         );
 
-        // Handlers called immediately without an explicit publish
+        // Handlers called immediately without an explicit emit
         expect(fooOnSubscribe).toHaveBeenCalledTimes(1);
         expect(fooOnSubscribe).toHaveBeenLastCalledWith(42, true);
         expect(barOnSubscribe).toHaveBeenCalledTimes(1);
@@ -196,11 +196,11 @@ describe("Event option: `onSubscribe`", () => {
         expect(fooSkipOnSubscribe).not.toHaveBeenCalled();
         expect(barSkipOnSubscribe).not.toHaveBeenCalled();
 
-        // Publish both events
-        publisher.publish.onFoo(1337, false);
-        publisher.publish.onBar();
+        // Emit both events
+        emitter.emit.foo(1337, false);
+        emitter.emit.bar();
 
-        // All handlers called by explicit publish
+        // All handlers called by explicit emit
         expect(fooOnSubscribe).toHaveBeenCalledTimes(2);
         expect(fooOnSubscribe).toHaveBeenLastCalledWith(1337, false);
         expect(barOnSubscribe).toHaveBeenCalledTimes(2);
@@ -213,8 +213,8 @@ describe("Event option: `onSubscribe`", () => {
 });
 
 describe("Event option: `once`", () => {
-    test("Automatically unsubscribe after handling one publish", () => {
-        const publisher = new EventPublisher<Events>();
+    test("Automatically unsubscribe after handling one emit", () => {
+        const emitter = new EventEmitter<Events>();
 
         const fooOnce = jest.fn();
         const barOnce = jest.fn();
@@ -222,16 +222,16 @@ describe("Event option: `once`", () => {
         const barForever = jest.fn();
 
         // will NOT unsubscribe
-        publisher.subscribe({
-            onFoo: fooForever,
+        emitter.on({
+            foo: fooForever,
         });
 
-        // WILL auto-unsubscribe after first publish to each event
+        // WILL auto-unsubscribe after first emit to each event
         // (each event handler independently unsubscribed)
-        publisher.subscribe(
+        emitter.on(
             {
-                onFoo: fooOnce,
-                onBar: barOnce,
+                foo: fooOnce,
+                bar: barOnce,
             },
             {
                 once: true,
@@ -239,13 +239,13 @@ describe("Event option: `once`", () => {
         );
 
         // Will NOT unsubscribe
-        publisher.subscribe({
-            onBar: barForever,
+        emitter.on({
+            bar: barForever,
         });
 
-        // Publish both events
-        publisher.publish.onFoo(42, true);
-        publisher.publish.onBar();
+        // Emit both events
+        emitter.emit.foo(42, true);
+        emitter.emit.bar();
 
         // All handlers called
         expect(fooOnce).toHaveBeenCalledTimes(1);
@@ -253,9 +253,9 @@ describe("Event option: `once`", () => {
         expect(fooForever).toHaveBeenCalledTimes(1);
         expect(barForever).toHaveBeenCalledTimes(1);
 
-        // Publish both events again
-        publisher.publish.onFoo(1337, false);
-        publisher.publish.onBar();
+        // Emit both events again
+        emitter.emit.foo(1337, false);
+        emitter.emit.bar();
 
         // "once"" handlers NOT called again
         expect(fooOnce).toHaveBeenCalledTimes(1);
@@ -265,14 +265,14 @@ describe("Event option: `once`", () => {
         expect(barForever).toHaveBeenCalledTimes(2);
     });
 
-    test("Automatically unsubscribe after handling initial onSubscribe auto-publish", () => {
-        const publisher = new EventPublisher<Events>({
-            onFoo: {
+    test("Automatically unsubscribe after handling initial onSubscribe auto-emit", () => {
+        const emitter = new EventEmitter<Events>({
+            foo: {
                 onSubscribe: (handler) => {
                     handler(42, true);
                 },
             },
-            onBar: {
+            bar: {
                 onSubscribe: (handler) => {
                     handler();
                 },
@@ -285,16 +285,16 @@ describe("Event option: `once`", () => {
         const barForever = jest.fn();
 
         // will NOT unsubscribe
-        publisher.subscribe({
-            onFoo: fooForever,
+        emitter.on({
+            foo: fooForever,
         });
 
-        // WILL auto-unsubscribe after auto publish on subscribe to each event
+        // WILL auto-unsubscribe after auto emit on subscribe to each event
         // (each event handler independently unsubscribed)
-        publisher.subscribe(
+        emitter.on(
             {
-                onFoo: fooOnce,
-                onBar: barOnce,
+                foo: fooOnce,
+                bar: barOnce,
             },
             {
                 once: true,
@@ -302,19 +302,19 @@ describe("Event option: `once`", () => {
         );
 
         // will NOT unsubscribe
-        publisher.subscribe({
-            onBar: barForever,
+        emitter.on({
+            bar: barForever,
         });
 
-        // All handlers called on publish
+        // All handlers called on emit
         expect(fooOnce).toHaveBeenCalledTimes(1);
         expect(barOnce).toHaveBeenCalledTimes(1);
         expect(fooForever).toHaveBeenCalledTimes(1);
         expect(barForever).toHaveBeenCalledTimes(1);
 
-        // Publish both events again
-        publisher.publish.onFoo(1337, false);
-        publisher.publish.onBar();
+        // Emit both events again
+        emitter.emit.foo(1337, false);
+        emitter.emit.bar();
 
         // "once"" handlers NOT called again
         expect(fooOnce).toHaveBeenCalledTimes(1);
@@ -324,14 +324,14 @@ describe("Event option: `once`", () => {
         expect(barForever).toHaveBeenCalledTimes(2);
     });
 
-    test("Automatically unsubscribee after skipping initial onSubscribe auto-publish and handling one event publish", () => {
-        const publisher = new EventPublisher<Events>({
-            onFoo: {
+    test("Automatically unsubscribee after skipping initial onSubscribe auto-emit and handling one event emit", () => {
+        const emitter = new EventEmitter<Events>({
+            foo: {
                 onSubscribe: (handler) => {
                     handler(42, true);
                 },
             },
-            onBar: {
+            bar: {
                 onSubscribe: (handler) => {
                     handler();
                 },
@@ -344,16 +344,16 @@ describe("Event option: `once`", () => {
         const barOnce = jest.fn();
 
         // will NOT unsubscribe
-        publisher.subscribe({
-            onFoo: fooForever,
+        emitter.on({
+            foo: fooForever,
         });
 
-        // WILL auto-unsubscribe after first publish to each event
+        // WILL auto-unsubscribe after first emit to each event
         // (each event handler independently unsubscribed)
-        publisher.subscribe(
+        emitter.on(
             {
-                onFoo: fooOnce,
-                onBar: barOnce,
+                foo: fooOnce,
+                bar: barOnce,
             },
             {
                 once: true,
@@ -362,8 +362,8 @@ describe("Event option: `once`", () => {
         );
 
         // will NOT unsubscribe
-        publisher.subscribe({
-            onBar: barForever,
+        emitter.on({
+            bar: barForever,
         });
 
         // These handlers skipped onSubscribe
@@ -373,9 +373,9 @@ describe("Event option: `once`", () => {
         expect(fooForever).toHaveBeenCalledTimes(1);
         expect(barForever).toHaveBeenCalledTimes(1);
 
-        // Publish both events
-        publisher.publish.onFoo(42, true);
-        publisher.publish.onBar();
+        // Emit both events
+        emitter.emit.foo(42, true);
+        emitter.emit.bar();
 
         // All handlers called
         expect(fooOnce).toHaveBeenCalledTimes(1);
@@ -383,9 +383,9 @@ describe("Event option: `once`", () => {
         expect(fooForever).toHaveBeenCalledTimes(2);
         expect(barForever).toHaveBeenCalledTimes(2);
 
-        // Publish both events again
-        publisher.publish.onFoo(1337, false);
-        publisher.publish.onBar();
+        // Emit both events again
+        emitter.emit.foo(1337, false);
+        emitter.emit.bar();
 
         // "once"" handlers NOT called again
         expect(fooOnce).toHaveBeenCalledTimes(1);
@@ -395,18 +395,18 @@ describe("Event option: `once`", () => {
         expect(fooForever).toHaveBeenCalledTimes(3);
     });
 
-    test("NOT unsubscribed onPublish if onPublish handler does NOT call the handler", () => {
-        const onFooSubscribe = jest.fn();
-        const onBarSubscribe = jest.fn();
+    test("NOT unsubscribed onSubscribe if onSubscribe handler does NOT call the handler", () => {
+        const fooSubscribe = jest.fn();
+        const barSubscribe = jest.fn();
 
-        const publisher = new EventPublisher<Events>({
-            onFoo: {
+        const emitter = new EventEmitter<Events>({
+            foo: {
                 // Doeas NOT call handler!
-                onSubscribe: onFooSubscribe,
+                onSubscribe: fooSubscribe,
             },
-            onBar: {
+            bar: {
                 // Doeas NOT call handler!
-                onSubscribe: onBarSubscribe,
+                onSubscribe: barSubscribe,
             },
         });
 
@@ -416,16 +416,16 @@ describe("Event option: `once`", () => {
         const barOnce = jest.fn();
 
         // will NOT unsubscribe
-        publisher.subscribe({
-            onFoo: fooForever,
+        emitter.on({
+            foo: fooForever,
         });
 
-        // WILL auto-unsubscribe after first publish to each event
+        // WILL auto-unsubscribe after first emit to each event
         // (each event handler independently unsubscribed)
-        publisher.subscribe(
+        emitter.on(
             {
-                onFoo: fooOnce,
-                onBar: barOnce,
+                foo: fooOnce,
+                bar: barOnce,
             },
             {
                 once: true,
@@ -433,13 +433,13 @@ describe("Event option: `once`", () => {
         );
 
         // will NOT unsubscribe
-        publisher.subscribe({
-            onBar: barForever,
+        emitter.on({
+            bar: barForever,
         });
 
         // onSubscribe handlers were called for each subscribe...
-        expect(onFooSubscribe).toHaveBeenCalledTimes(2);
-        expect(onBarSubscribe).toHaveBeenCalledTimes(2);
+        expect(fooSubscribe).toHaveBeenCalledTimes(2);
+        expect(barSubscribe).toHaveBeenCalledTimes(2);
 
         // ...but onSubscribe handlers did not actually call the event handlers!
         expect(fooOnce).toHaveBeenCalledTimes(0);
@@ -447,9 +447,9 @@ describe("Event option: `once`", () => {
         expect(fooForever).toHaveBeenCalledTimes(0);
         expect(barForever).toHaveBeenCalledTimes(0);
 
-        // Publish both events
-        publisher.publish.onFoo(42, true);
-        publisher.publish.onBar();
+        // Emit both events
+        emitter.emit.foo(42, true);
+        emitter.emit.bar();
 
         // All handlers called
         expect(fooOnce).toHaveBeenCalledTimes(1);
@@ -457,9 +457,9 @@ describe("Event option: `once`", () => {
         expect(fooForever).toHaveBeenCalledTimes(1);
         expect(barForever).toHaveBeenCalledTimes(1);
 
-        // Publish both events again
-        publisher.publish.onFoo(1337, false);
-        publisher.publish.onBar();
+        // Emit both events again
+        emitter.emit.foo(1337, false);
+        emitter.emit.bar();
 
         // "once"" handlers NOT called again
         expect(fooOnce).toHaveBeenCalledTimes(1);
@@ -471,29 +471,29 @@ describe("Event option: `once`", () => {
 });
 
 describe("Event handler return value", () => {
-    test("Return value is ignored and not returned when publishing", () => {
-        const publisher = new EventPublisher<Events>();
+    test("Return value is ignored and not returned when emitting", () => {
+        const emitter = new EventEmitter<Events>();
 
         const foo1 = jest.fn().mockReturnValue(true);
         // Second handler will return false, but this does nothing special
-        // (does not abort publishing to remaining handlers)
+        // (does not abort emitting to remaining handlers)
         const foo2 = jest.fn().mockReturnValue(false);
         const foo3 = jest.fn().mockReturnValue(true);
 
-        publisher.subscribe({
-            onFoo: foo1,
+        emitter.on({
+            foo: foo1,
         });
 
-        publisher.subscribe({
-            onFoo: foo2,
+        emitter.on({
+            foo: foo2,
         });
 
-        publisher.subscribe({
-            onFoo: foo3,
+        emitter.on({
+            foo: foo3,
         });
 
-        // Publish returns undefinend
-        expect(publisher.publish.onFoo(42, true)).toBe(undefined);
+        // Emit returns undefinend
+        expect(emitter.emit.foo(42, true)).toBe(undefined);
 
         // All handlers called, even though one returned false
         expect(foo1).toBeCalledTimes(1);
@@ -502,8 +502,8 @@ describe("Event handler return value", () => {
     });
 
     test("Return value IS returned in onSubscribe handler", () => {
-        const publisher = new EventPublisher<Events>({
-            onBar: {
+        const emitter = new EventEmitter<Events>({
+            bar: {
                 onSubscribe: (handler) => {
                     // Handler returns expected value
                     expect(handler()).toBe("hello!");
@@ -514,8 +514,8 @@ describe("Event handler return value", () => {
         // Handler returns a value
         const bar = jest.fn().mockReturnValue("hello!");
 
-        publisher.subscribe({
-            onBar: bar,
+        emitter.on({
+            bar: bar,
         });
 
         // Sanity check to confirm the `onSubscribe` handler was called
@@ -529,8 +529,8 @@ describe("Shorthand subscription to a single event", () => {
     // subscription is converted into a full subscription event handlers
     // object with only the one event's handler specified.
     test("General sanity check", () => {
-        const publisher = new EventPublisher<Events>({
-            onFoo: {
+        const emitter = new EventEmitter<Events>({
+            foo: {
                 onSubscribe: (handler) => {
                     handler(42, true);
                 },
@@ -541,11 +541,11 @@ describe("Shorthand subscription to a single event", () => {
         const fooOnce = jest.fn();
 
         // One simple example without any options
-        publisher.subscribe("onFoo", fooAlways);
+        emitter.on("foo", fooAlways);
 
         // One example with a subscription option
         // (Don't need to test all options and edge cases; just confirm that options are applied)
-        publisher.subscribe("onFoo", fooOnce, {
+        emitter.on("foo", fooOnce, {
             once: true,
         });
 
@@ -555,7 +555,7 @@ describe("Shorthand subscription to a single event", () => {
         expect(fooOnce).toHaveBeenCalledTimes(1);
         expect(fooOnce).toHaveBeenLastCalledWith(42, true);
 
-        publisher.publish.onFoo(1337, false);
+        emitter.emit.foo(1337, false);
 
         // Simple handler is called again
         expect(fooAlways).toHaveBeenCalledTimes(2);

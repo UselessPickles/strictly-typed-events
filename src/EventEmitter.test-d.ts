@@ -1,6 +1,6 @@
 // tslint:disable:no-unused-expression
 // NOTE: import from root/index to test against publicly exported types
-import { EventPublisher, SubscriptionCanceller, EventSource } from "./";
+import { EventEmitter, SubscriptionCanceller, EventSource } from ".";
 import { expectType, expectError } from "tsd";
 
 // Sample Events interface for testing
@@ -14,13 +14,13 @@ interface Events {
 }
 
 // shared instance for tests
-const eventPublisher = new EventPublisher<Events>();
+const eventEmitter = new EventEmitter<Events>();
 
 // constructor
 {
     // invalid event name in options
     expectError(
-        new EventPublisher<Events>({
+        new EventEmitter<Events>({
             broken: {
                 onSubscribe: () => {
                     // empty
@@ -30,7 +30,7 @@ const eventPublisher = new EventPublisher<Events>();
     );
 
     // "onSubscribe" option is typed properly
-    new EventPublisher<Events>({
+    new EventEmitter<Events>({
         foo: {
             onSubscribe: (handler) => {
                 expectType<Events["foo"]>(handler);
@@ -43,26 +43,26 @@ const eventPublisher = new EventPublisher<Events>();
 
 // properties
 {
-    // `publish` is similar to `Events` type, but readonly, and all methods return `void`
+    // `emit` is similar to `Events` type, but readonly, and all methods return `void`
     expectType<
         Readonly<{
             // return type lost here (intentionally)
             foo(a: number, b: boolean): void;
             bar(): void;
         }>
-    >(eventPublisher.publish);
+    >(eventEmitter.emit);
 }
 
 // asEventSource()
 {
-    expectType<EventSource<Events>>(eventPublisher.asEventSource());
+    expectType<EventSource<Events>>(eventEmitter.asEventSource());
 }
 
 // subscribe()
 {
     // subscribe with invalid event name
     expectError(
-        eventPublisher.subscribe({
+        eventEmitter.on({
             bad: () => {
                 // empty
             },
@@ -70,7 +70,7 @@ const eventPublisher = new EventPublisher<Events>();
     );
 
     // subscribe with partial handlers object, no options
-    eventPublisher.subscribe({
+    eventEmitter.on({
         foo: (a, b) => {
             expectType<number>(a);
             expectType<boolean>(b);
@@ -79,7 +79,7 @@ const eventPublisher = new EventPublisher<Events>();
     });
 
     // subscribe with partial handlers object, partial options
-    eventPublisher.subscribe(
+    eventEmitter.on(
         {
             foo: (a, b) => {
                 expectType<number>(a);
@@ -94,20 +94,20 @@ const eventPublisher = new EventPublisher<Events>();
 
     // subscribe with invalid event name
     expectError(
-        eventPublisher.subscribe("broken", () => {
+        eventEmitter.on("broken", () => {
             // empty
         })
     );
 
     // subscribe with event name, no options
-    eventPublisher.subscribe("foo", (a, b) => {
+    eventEmitter.on("foo", (a, b) => {
         expectType<number>(a);
         expectType<boolean>(b);
         return true;
     });
 
     // subscribe with event name, partial options
-    eventPublisher.subscribe(
+    eventEmitter.on(
         "foo",
         (a, b) => {
             expectType<number>(a);
@@ -120,7 +120,5 @@ const eventPublisher = new EventPublisher<Events>();
     );
 
     // returns a SubscriptionCanceller
-    expectType<SubscriptionCanceller>(
-        eventPublisher.subscribe("bar", () => undefined)
-    );
+    expectType<SubscriptionCanceller>(eventEmitter.on("bar", () => undefined));
 }

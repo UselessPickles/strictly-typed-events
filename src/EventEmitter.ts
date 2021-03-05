@@ -4,7 +4,7 @@ import {
     EventNames,
     EventSource,
     SubscriptionCanceller,
-    EventPublishProxy,
+    EventEmitProxy,
     SubscriptionOptions,
     EventsOptions,
 } from "./types.private";
@@ -14,7 +14,7 @@ import {
  */
 interface EventSubscription<Events extends EventsConstraint<Events>> {
     /**
-     * The handler for the event that is called whenever the event is published.
+     * The handler for the event that is called whenever the event is emitted.
      */
     handler: Events[EventNames<Events>];
     /**
@@ -28,18 +28,18 @@ interface EventSubscription<Events extends EventsConstraint<Events>> {
 }
 
 /**
- * Manages subscriptions to, and publishing of, events.
- * - Call methods of {@link EventPublisher#publish} to publish calls to all
+ * Manages subscriptions to, and emitting of, events.
+ * - Call methods of {@link EventEmitter#emit} to emit calls to all
  * subscribed handlers of an event.
- * - Call {@link EventPublisher#subscribe} to subscribe to one or more events.
- * - Call the function returned by {@link EventPublisher#subscribe} to cancel
+ * - Call {@link EventEmitter#on} to subscribe to one or more events.
+ * - Call the function returned by {@link EventEmitter#on} to cancel
  * the subscription.
- * - Expose an EventPublisher typecast to {@link EventSource} to restrict
- * consuming code to subscribing only (keep the publishing part private).
- *     - See {@link EventPublisher#asEventSource}.
+ * - Expose an EventEmitter typecast to {@link EventSource} to restrict
+ * consuming code to subscribing only (keep the emitting part private).
+ *     - See {@link EventEmitter#asEventSource}.
  *     - See {@link EventSourceType}
- * - Consider extending {@link WithEventPublisher} to more conveniently make
- * your class an EventSource without publicly exposing the means to publish events.
+ * - Consider extending {@link WithEventEmitter} to more conveniently make
+ * your class an EventSource without publicly exposing the means to emit events.
  * NOTE: You must explicitly provide an interface for your events as the Events
  *       template parameter.
  * @template Events - An interface/type containing only methods, where each method
@@ -48,26 +48,26 @@ interface EventSubscription<Events extends EventsConstraint<Events>> {
  * @example
  * ```
  * class MyClass {
- *     // Private EventPublisher gives your class the ability to publish
+ *     // Private EventEmitter gives your class the ability to emit
  *     // events.
- *     private eventPublisher = new EventPublisher<{
+ *     private eventEmitter = new EventEmitter<{
  *         // Event definitions here.
  *         // Add TSDoc comment here to explain when this event is called,
  *         // document params, etc.
- *         onNameChange(name: string): void;
+ *         nameChanged(name: string): void;
  *     }>();
  *
- *     // Expose the eventPublisher publicly, but only as an EventSource,
+ *     // Expose the EventEmitter publicly, but only as an EventSource,
  *     // so external code can only subscribe to events.
  *     // Using asEventSource() allows the `events` field's type to be
  *     // conveniently inferred, rather than needing to manually specify its
  *     // type correctly.
- *     public events = this.eventPublisher.asEventSource();
+ *     public events = this.eventEmitter.asEventSource();
  *
  *     public setName(name: string): void {
  *         this.name = name;
- *         // publish the "onNameChange" event with the new name
- *         this.publish.onNameChange(name);
+ *         // emit the "nameChanged" event with the new name
+ *         this.eventEmitter.emit.nameChanged(name);
  *     }
  * }
  *
@@ -75,14 +75,14 @@ interface EventSubscription<Events extends EventsConstraint<Events>> {
  * const myInstance = new MyClass("Bob");
  *
  * // Subscribe to an event
- * const cancelSubscription = myInstance.events.subscribe(
- *     "onNameChange",
+ * const cancelSubscription = myInstance.events.on(
+ *     "nameChanged",
  *     (name) => {
  *         console.log(name);
  *     }
  * );
  *
- * // Trigger the event to be published, which will execute the above event
+ * // Trigger the event to be emitted, which will execute the above event
  * // handler
  * myInstance.setName("Joe");
  *
@@ -90,17 +90,17 @@ interface EventSubscription<Events extends EventsConstraint<Events>> {
  * cancelSubscription();
  * ```
  */
-export class EventPublisher<Events extends EventsConstraint<Events>>
+export class EventEmitter<Events extends EventsConstraint<Events>>
     implements EventSource<Events> {
     /**
-     * A convenient proxy for publishing to all subscribed handlers of any event.
+     * A convenient proxy for emitting to all subscribed handlers of any event.
      * For each event defined by the Events interface, a method of the same name,
      * and same parameters signature, exists on this object that will call
      * all subscribed handlers of that event.
      * NOTE: The return type of every method on this proxy is `void`, regardless
      *       of the return type for the corresponding event.
      */
-    public readonly publish: EventPublishProxy<Events>;
+    public readonly emit: EventEmitProxy<Events>;
 
     /**
      * Map of event name -> map of subscription ID -> event subscription info
@@ -115,8 +115,8 @@ export class EventPublisher<Events extends EventsConstraint<Events>>
     private nextSubscriptionIdNumber = 0;
 
     /**
-     * Creates an implementation of an event publish method for the
-     * {@link #publish} property.
+     * Creates an implementation of an event emit method for the
+     * {@link #emit} property.
      *
      * @param eventName - A valid event name.
      * @returns A function that, when called, will call all subscibed handlers
@@ -158,15 +158,15 @@ export class EventPublisher<Events extends EventsConstraint<Events>>
 
     /**
      * An implementation for the `get` handler of a Proxy used to implement
-     * the {@link #publish} property.
-     * Dynamically creates/caches/returns an implementation of a "publish" method
+     * the {@link #emit} property.
+     * Dynamically creates/caches/returns an implementation of an "emit" method
      * for the specified event.
-     * @param target - A reference to the `publish` property.
-     * @param eventName - The name of the event whose publish method is being accessed.
-     * @returns The implementation of the publish method for the specified event.
+     * @param target - A reference to the `emit` property.
+     * @param eventName - The name of the event whose emit method is being accessed.
+     * @returns The implementation of the emit method for the specified event.
      */
-    private publishProxyGet(
-        target: EventPublishProxy<Events>,
+    private emitProxyGet(
+        target: EventEmitProxy<Events>,
         eventName: EventNames<Events>
     ): () => void {
         // If this eventName property has never been accessed before, then create
@@ -186,34 +186,34 @@ export class EventPublisher<Events extends EventsConstraint<Events>>
      * @param options - Configuration options for the events.
      */
     public constructor(private readonly options: EventsOptions<Events> = {}) {
-        this.publish = new Proxy({} as EventPublishProxy<Events>, {
-            get: this.publishProxyGet.bind(this),
+        this.emit = new Proxy({} as EventEmitProxy<Events>, {
+            get: this.emitProxyGet.bind(this),
         });
     }
 
     /**
-     * Convenience method that typecasts this EventPublisher to an EventSource
+     * Convenience method that typecasts this EventEmitter to an EventSource
      * to expose only the means to subscribe to events, without exposing the
-     * means to publish events.
+     * means to emit events.
      *
      * See also: {@link EventSourceType}
      *
-     * @returns - This EventPublisher, typecast as an EventSource.
+     * @returns - This EventEmitter, typecast as an EventSource.
      * @example
      * ```
      * class MyClass {
-     *     // Private EventPublisher gives your class the ability to publish
+     *     // Private EventEmitter gives your class the ability to emit
      *     // events.
-     *     private eventPublisher = new EventPublisher<{
-     *         onNameChange(name: string): void;
+     *     private eventEmitter = new EventEmitter<{
+     *         nameChanged(name: string): void;
      *     }>();
      *
-     *     // Expose the eventPublisher publicly, but only as an EventSource,
+     *     // Expose the EventEmitter publicly, but only as an EventSource,
      *     // so external code can only subscribe to events.
      *     // Using asEventSource() allows the `events` field's type to be
      *     // conveniently inferred, rather than needing to manually specify its
      *     // type correctly.
-     *     public events = this.eventPublisher.asEventSource();
+     *     public events = this.eventEmitter.asEventSource();
      * }
      * ```
      */
@@ -225,7 +225,7 @@ export class EventPublisher<Events extends EventsConstraint<Events>>
      * @override
      * @inheritdoc
      */
-    public subscribe<EventName extends EventNames<Events>>(
+    public on<EventName extends EventNames<Events>>(
         name: EventName,
         handler: Events[EventName],
         options?: SubscriptionOptions
@@ -234,11 +234,11 @@ export class EventPublisher<Events extends EventsConstraint<Events>>
      * @override
      * @inheritdoc
      */
-    public subscribe(
+    public on(
         handlers: Partial<Events>,
         options?: SubscriptionOptions
     ): SubscriptionCanceller;
-    public subscribe(
+    public on(
         eventNameOrHandlers: EventNames<Events> | Partial<Events>,
         handlerOrOptions: Events[EventNames<Events>] | SubscriptionOptions = {},
         maybeOptions: SubscriptionOptions = {}
