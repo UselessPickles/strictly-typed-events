@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+-   `EventsType` helper type for extracting the `Events` interface from any `EventSource` type.
 -   Basic usage examples/patterns in README.
 
 ### Changed

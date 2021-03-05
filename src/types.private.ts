@@ -105,6 +105,32 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
 }
 
 /**
+ * Helper type used to extract the Events interface from any {@link EventSource}.
+ * this is useful, for example, if you need to reference the function signature
+ * type of one of the events of an EventSource, but there is no publicly available
+ * named typed for its Events interface.
+ *
+ * @template T - An EventSource type.
+ * @example
+ * ```ts
+ * // An `EventSource` where you don't have direct knowledge of the Events
+ * // interface it uses, or its Events interface was inlined at creation.
+ * declare const eventSource: EventSource<[unknown]>
+ *
+ * // Use `EventsType` to extract the type of an event so you can
+ * // pre-define a type-safe handler for the event.
+ * const nameChangedHandler: EventsType<typeof eventSource>["nameChanged"] = (name) => {
+ *     // parameter types are inferred correctly and return type is checked
+ * };
+ * ```
+ */
+export type EventsType<T extends EventSource<any>> = T extends EventSource<
+    infer Events
+>
+    ? Events
+    : never;
+
+/**
  * Helper type used to infer the exact {@link EventSource} type from any type that
  * extends EventSource.
  * This is useful for deriving the EventSource type from an existing
@@ -113,6 +139,7 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
  *
  * See also: {@link EventEmitter#asEventSource}
  *
+ * @template T - An EventSource type.
  * @example
  * ```
  * class MyClass {

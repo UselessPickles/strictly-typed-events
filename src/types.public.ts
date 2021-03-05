@@ -3,6 +3,7 @@
  */
 export {
     EventSource,
+    EventsType,
     EventSourceType,
     SubscriptionCanceller,
 } from "./types.private";
