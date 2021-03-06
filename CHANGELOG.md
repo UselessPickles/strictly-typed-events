@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+-   Simplified code related to storing/executing one-time subscriptions.
 -   Event handlers are now always called without a `this` context for simplicity.
 
 ### Removed
