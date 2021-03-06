@@ -16,31 +16,6 @@ interface Events {
 // shared instance for tests
 const eventEmitter = new EventEmitter<Events>();
 
-// constructor
-{
-    // invalid event name in options
-    expectError(
-        new EventEmitter<Events>({
-            broken: {
-                onSubscribe: () => {
-                    // empty
-                },
-            },
-        })
-    );
-
-    // "onSubscribe" option is typed properly
-    new EventEmitter<Events>({
-        foo: {
-            onSubscribe: (handler) => {
-                expectType<Events["foo"]>(handler);
-                // return type is preserved here
-                expectType<boolean>(handler(42, true));
-            },
-        },
-    });
-}
-
 // properties
 {
     // `emit` is similar to `Events` type, but readonly, and all methods return `void`

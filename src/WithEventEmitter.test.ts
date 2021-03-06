@@ -9,13 +9,7 @@ interface Events {
 class Widget extends WithEventEmitter<Events> {
     public constructor() {
         // Helps validate that EventEmitter constructor params are passed through
-        super({
-            foo: {
-                onSubscribe: (handler) => {
-                    handler(42, true);
-                },
-            },
-        });
+        super();
     }
 
     // Helps validate that the class inherits access topublishing events
@@ -56,7 +50,9 @@ test("General sanity check", () => {
         }
     );
 
-    // All handlers called initially by onSubscribe
+    widget.triggerFoo(42, true);
+
+    // All handlers called by first emit
     expect(fooAlways).toHaveBeenCalledTimes(1);
     expect(fooAlways).toHaveBeenLastCalledWith(42, true);
     expect(fooCancelled).toHaveBeenCalledTimes(1);
@@ -64,7 +60,6 @@ test("General sanity check", () => {
     expect(fooOnce).toHaveBeenCalledTimes(1);
     expect(fooOnce).toHaveBeenLastCalledWith(42, true);
 
-    // trigger event
     widget.triggerFoo(1337, false);
 
     // Still-subscribed handlers called

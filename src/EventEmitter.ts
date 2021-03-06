@@ -6,7 +6,6 @@ import {
     SubscriptionCanceller,
     EventEmitProxy,
     SubscriptionOptions,
-    EventsOptions,
 } from "./types.private";
 
 /**
@@ -185,7 +184,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
     /**
      * @param options - Configuration options for the events.
      */
-    public constructor(private readonly options: EventsOptions<Events> = {}) {
+    public constructor() {
         this.emit = new Proxy({} as EventEmitProxy<Events>, {
             get: this.emitProxyGet.bind(this),
         });
@@ -278,33 +277,6 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
                 options: options,
                 context: handlers,
             };
-
-            // Execute "onSubscribe" behavior if configured to do so
-            const eventOptions = this.options[eventName];
-            if (
-                eventOptions &&
-                eventOptions.onSubscribe &&
-                !options.skipOnSubscribe
-            ) {
-                // NOTE: Avoiding using an arrow function here to optimize the
-                //       transpiled code.
-                const _this = this;
-                // Ugly typecasting necessary to work around generics
-                (eventOptions.onSubscribe as AnyFunction)(function (): any {
-                    if (options.once) {
-                        _this.cancel(subscriptionId, eventName);
-                    }
-
-                    // Call the handler, passing through all arguments
-                    return handler.apply(
-                        handlers,
-                        // Ugly typecast necessary to directly pass arguments
-                        // through rather than spreading arguments (...arguments),
-                        // which would transpile to unnecessary creation of a new array.
-                        (arguments as unknown) as any[]
-                    );
-                });
-            }
         }
 
         // NOTE: Avoiding using an arrow function here to optimize the

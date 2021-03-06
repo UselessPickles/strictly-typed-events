@@ -55,13 +55,6 @@ export interface SubscriptionOptions {
      * unsubscribe itself after being called once.
      */
     once?: boolean;
-    /**
-     * If true, then event handlers in this subscription will NOT be called
-     * automatically upon subscribing.
-     * NOTE: Only relevant if the EventEmitter is configured to call the event
-     * handler in an [onSubscribe handler]{@link EventOptions#onSubscribe}.
-     */
-    skipOnSubscribe?: boolean;
 }
 
 /**
@@ -162,30 +155,3 @@ export type EventSourceType<T extends EventSource<any>> = T extends EventSource<
 >
     ? EventSource<Events>
     : never;
-
-/**
- * Configuration options for a single event.
- * @template Handler - The exact function signature for the handler of a particular event.
- */
-export interface EventOptions<Handler extends AnyFunction> {
-    /**
-     * Called whenever a new subscription to this event is created.
-     * The implementation may choose to call the supplied handler to immediately
-     * "publish" the event to the newly subscribed handler.
-     * NOTE: any particular subscription may choose to opt out of this via
-     * {@link SubscriptionOptions#skipOnSubscribe}.
-     * @param handler - Call this to publish to the new handler.
-     *        Returns the return value of the handler.
-     */
-    onSubscribe?(handler: Handler): void;
-}
-
-/**
- * Configuration options for all events of an Event interface.
- * For each event defined in the Event interface, and identically named
- * optional property exists to specify options for that event.
- * @template Events - an Events interface (see {@link EventsConstraint}).
- */
-export type EventsOptions<Events extends EventsConstraint<Events>> = {
-    readonly [P in EventNames<Events>]?: EventOptions<Events[P]>;
-};

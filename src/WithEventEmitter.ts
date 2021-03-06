@@ -1,6 +1,5 @@
 import { EventEmitter } from "./EventEmitter";
 import {
-    EventsOptions,
     EventsConstraint,
     EventSource,
     EventNames,
@@ -74,8 +73,8 @@ export class WithEventEmitter<Events extends EventsConstraint<Events>>
     /**
      * @param options - Configuration options for the events.
      */
-    constructor(options?: EventsOptions<Events>) {
-        this.eventEmitter = new EventEmitter<Events>(options);
+    constructor() {
+        this.eventEmitter = new EventEmitter<Events>();
         this.emit = this.eventEmitter.emit;
     }
 
