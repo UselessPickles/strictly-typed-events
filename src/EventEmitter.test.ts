@@ -2,8 +2,8 @@ import { EventEmitter } from "./EventEmitter";
 
 // Sample Events interface for testing
 interface Events {
-    foo(a: number, b: boolean): boolean;
-    bar(): string;
+    foo(a: number, b: boolean): void;
+    bar(): void;
 }
 
 test("asEventSource()", () => {
@@ -138,7 +138,7 @@ describe("Cancel subscription", () => {
     test("Cancelling multiple times is ignored", () => {
         const emitter = new EventEmitter<Events>();
         const cancel = emitter.on({
-            bar: () => "test",
+            bar: () => undefined,
         });
 
         // Cancel normally
@@ -203,74 +203,42 @@ describe("Event option: `once`", () => {
         expect(fooForever).toHaveBeenCalledTimes(2);
         expect(barForever).toHaveBeenCalledTimes(2);
     });
+});
 
-    describe("Event handler return value", () => {
-        test("Return value is ignored and not returned when emitting", () => {
-            const emitter = new EventEmitter<Events>();
+describe("Shorthand subscription to a single event", () => {
+    // All the details and edge cases can be assumed to work properly if
+    // the basics are confirmed, because at subscription time, a shorthand
+    // subscription is converted into a full subscription event handlers
+    // object with only the one event's handler specified.
+    test("General sanity check", () => {
+        const emitter = new EventEmitter<Events>();
 
-            const foo1 = jest.fn().mockReturnValue(true);
-            // Second handler will return false, but this does nothing special
-            // (does not abort emitting to remaining handlers)
-            const foo2 = jest.fn().mockReturnValue(false);
-            const foo3 = jest.fn().mockReturnValue(true);
+        const fooAlways = jest.fn();
+        const fooOnce = jest.fn();
 
-            emitter.on({
-                foo: foo1,
-            });
+        // One simple example without any options
+        emitter.on("foo", fooAlways);
 
-            emitter.on({
-                foo: foo2,
-            });
-
-            emitter.on({
-                foo: foo3,
-            });
-
-            // Emit returns undefinend
-            expect(emitter.emit.foo(42, true)).toBe(undefined);
-
-            // All handlers called, even though one returned false
-            expect(foo1).toBeCalledTimes(1);
-            expect(foo2).toBeCalledTimes(1);
-            expect(foo3).toBeCalledTimes(1);
+        // One example with a subscription option
+        // (Don't need to test all options and edge cases; just confirm that options are applied)
+        emitter.on("foo", fooOnce, {
+            once: true,
         });
-    });
 
-    describe("Shorthand subscription to a single event", () => {
-        // All the details and edge cases can be assumed to work properly if
-        // the basics are confirmed, because at subscription time, a shorthand
-        // subscription is converted into a full subscription event handlers
-        // object with only the one event's handler specified.
-        test("General sanity check", () => {
-            const emitter = new EventEmitter<Events>();
+        emitter.emit.foo(42, true);
 
-            const fooAlways = jest.fn();
-            const fooOnce = jest.fn();
+        // Both handlers called on first emit
+        expect(fooAlways).toHaveBeenCalledTimes(1);
+        expect(fooAlways).toHaveBeenLastCalledWith(42, true);
+        expect(fooOnce).toHaveBeenCalledTimes(1);
+        expect(fooOnce).toHaveBeenLastCalledWith(42, true);
 
-            // One simple example without any options
-            emitter.on("foo", fooAlways);
+        emitter.emit.foo(1337, false);
 
-            // One example with a subscription option
-            // (Don't need to test all options and edge cases; just confirm that options are applied)
-            emitter.on("foo", fooOnce, {
-                once: true,
-            });
-
-            emitter.emit.foo(42, true);
-
-            // Both handlers called on first emit
-            expect(fooAlways).toHaveBeenCalledTimes(1);
-            expect(fooAlways).toHaveBeenLastCalledWith(42, true);
-            expect(fooOnce).toHaveBeenCalledTimes(1);
-            expect(fooOnce).toHaveBeenLastCalledWith(42, true);
-
-            emitter.emit.foo(1337, false);
-
-            // Simple handler is called again
-            expect(fooAlways).toHaveBeenCalledTimes(2);
-            expect(fooAlways).toHaveBeenLastCalledWith(1337, false);
-            // The one-time handler is NOT called again
-            expect(fooOnce).toHaveBeenCalledTimes(1);
-        });
+        // Simple handler is called again
+        expect(fooAlways).toHaveBeenCalledTimes(2);
+        expect(fooAlways).toHaveBeenLastCalledWith(1337, false);
+        // The one-time handler is NOT called again
+        expect(fooOnce).toHaveBeenCalledTimes(1);
     });
 });

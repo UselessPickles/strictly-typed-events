@@ -5,11 +5,7 @@ import { expectType, expectError } from "tsd";
 
 // Sample Events interface for testing
 interface Events {
-    // Intentionally with typed parameters and non-void return type for testing
-    foo(a: number, b: boolean): boolean;
-    /**
-     * Test!
-     */
+    foo(a: number, b: boolean): void;
     bar(): void;
 }
 
@@ -18,14 +14,11 @@ const eventEmitter = new EventEmitter<Events>();
 
 // properties
 {
-    // `emit` is similar to `Events` type, but readonly, and all methods return `void`
-    expectType<
-        Readonly<{
-            // return type lost here (intentionally)
-            foo(a: number, b: boolean): void;
-            bar(): void;
-        }>
-    >(eventEmitter.emit);
+    // `emit` is the same as the `Events` type, except readonly
+    expectType<{
+        readonly foo: (a: number, b: boolean) => void;
+        readonly bar: () => void;
+    }>(eventEmitter.emit);
 }
 
 // asEventSource()
@@ -49,9 +42,28 @@ const eventEmitter = new EventEmitter<Events>();
         foo: (a, b) => {
             expectType<number>(a);
             expectType<boolean>(b);
-            return true;
         },
     });
+
+    // subscribe with partial handlers object, handler returns a Promise.
+    eventEmitter.on({
+        foo: (a, b) => {
+            expectType<number>(a);
+            expectType<boolean>(b);
+            return Promise.resolve();
+        },
+    });
+
+    // subscribe with partial handlers object, handler returns an invalid type.
+    expectError(
+        eventEmitter.on({
+            foo: (a, b) => {
+                expectType<number>(a);
+                expectType<boolean>(b);
+                return 42;
+            },
+        })
+    );
 
     // subscribe with partial handlers object, partial options
     eventEmitter.on(
@@ -59,7 +71,6 @@ const eventEmitter = new EventEmitter<Events>();
             foo: (a, b) => {
                 expectType<number>(a);
                 expectType<boolean>(b);
-                return true;
             },
         },
         {
@@ -78,8 +89,23 @@ const eventEmitter = new EventEmitter<Events>();
     eventEmitter.on("foo", (a, b) => {
         expectType<number>(a);
         expectType<boolean>(b);
-        return true;
     });
+
+    // subscribe with event name, handler returns a Promise
+    eventEmitter.on("foo", (a, b) => {
+        expectType<number>(a);
+        expectType<boolean>(b);
+        return Promise.resolve();
+    });
+
+    expectError(
+        // subscribe with event name, handler returns an invalid type
+        eventEmitter.on("foo", (a, b) => {
+            expectType<number>(a);
+            expectType<boolean>(b);
+            return 42;
+        })
+    );
 
     // subscribe with event name, partial options
     eventEmitter.on(
@@ -87,7 +113,6 @@ const eventEmitter = new EventEmitter<Events>();
         (a, b) => {
             expectType<number>(a);
             expectType<boolean>(b);
-            return true;
         },
         {
             once: true,

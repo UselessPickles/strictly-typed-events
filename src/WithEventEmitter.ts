@@ -1,6 +1,8 @@
 import { EventEmitter } from "./EventEmitter";
 import {
     EventsConstraint,
+    EventHandler,
+    EventHandlers,
     EventSource,
     EventNames,
     SubscriptionOptions,
@@ -84,7 +86,7 @@ export class WithEventEmitter<Events extends EventsConstraint<Events>>
      */
     public on<EventName extends EventNames<Events>>(
         eventName: EventName,
-        handler: Events[EventName],
+        handler: EventHandler<Events[EventName]>,
         options?: SubscriptionOptions
     ): SubscriptionCanceller;
     /**
@@ -92,7 +94,7 @@ export class WithEventEmitter<Events extends EventsConstraint<Events>>
      * @inheritdoc
      */
     public on(
-        handlers: Partial<Events>,
+        handlers: Partial<EventHandlers<Events>>,
         options?: SubscriptionOptions
     ): SubscriptionCanceller;
     public on(): SubscriptionCanceller {

@@ -2,7 +2,7 @@ import { WithEventEmitter } from "./WithEventEmitter";
 
 // Sample Events interface for testing
 interface Events {
-    foo(a: number, b: boolean): boolean;
+    foo(a: number, b: boolean): void;
 }
 
 // Sample class that extends WithEventEmitter for testing

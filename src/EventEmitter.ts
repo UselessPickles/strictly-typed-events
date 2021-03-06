@@ -1,24 +1,14 @@
 import {
+    AnyEventFunction,
+    AnyEventHandler,
     EventsConstraint,
+    EventHandler,
+    EventHandlers,
     EventNames,
     EventSource,
     SubscriptionCanceller,
-    EventEmitProxy,
     SubscriptionOptions,
 } from "./types.private";
-
-/**
- * Opposite of the standard Readonly<> type.
- * Makes all properties non-readonly.
- */
-type Mutable<T> = {
-    -readonly [P in keyof T]: T[P];
-};
-
-/**
- * Type for any non-specific event handler function.
- */
-type HandlerFunction = (...args: any[]) => void;
 
 /**
  * Manages subscriptions to, and emitting of, events.
@@ -90,16 +80,14 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      * For each event defined by the Events interface, a method of the same name,
      * and same parameters signature, exists on this object that will call
      * all subscribed handlers of that event.
-     * NOTE: The return type of every method on this proxy is `void`, regardless
-     *       of the return type for the corresponding event.
      */
-    public readonly emit: EventEmitProxy<Events>;
+    public readonly emit: Readonly<Events>;
 
     /**
      * Map of event name -> map of subscription ID -> event handler
      */
     private readonly handlers: Partial<
-        Record<string, Record<string, HandlerFunction>>
+        Record<string, Record<string, AnyEventHandler>>
     > = {};
 
     /**
@@ -117,7 +105,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      */
     private createEventHandlerCaller(
         eventName: EventNames<Events>
-    ): HandlerFunction {
+    ): AnyEventFunction {
         // NOTE: Avoiding using an arrow function here to optimize the
         //       transpiled code (particularly with regards to an ...args param
         //       versus the native arguments keyword).
@@ -159,15 +147,17 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      * @returns The implementation of the emit method for the specified event.
      */
     private emitProxyGet(
-        target: Mutable<EventEmitProxy<Events>>,
+        target: Events,
         eventName: EventNames<Events>
-    ): () => void {
+    ): AnyEventFunction {
         // If this eventName property has never been accessed before, then create
         // and cache its implementation.
         if (!target[eventName]) {
             // NOTE: Avoiding using an arrow function here to optimize the
             //       transpiled code.
-            target[eventName] = this.createEventHandlerCaller(eventName);
+            target[eventName] = this.createEventHandlerCaller(
+                eventName
+            ) as Events[EventNames<Events>];
         }
 
         return target[eventName];
@@ -177,7 +167,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      * @param options - Configuration options for the events.
      */
     public constructor() {
-        this.emit = new Proxy({} as Mutable<EventEmitProxy<Events>>, {
+        this.emit = new Proxy({} as Events, {
             get: this.emitProxyGet.bind(this),
         });
     }
@@ -218,7 +208,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      */
     public on<EventName extends EventNames<Events>>(
         name: EventName,
-        handler: Events[EventName],
+        handler: EventHandler<Events[EventName]>,
         options?: SubscriptionOptions
     ): SubscriptionCanceller;
     /**
@@ -226,45 +216,51 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      * @inheritdoc
      */
     public on(
-        handlers: Partial<Events>,
+        handlers: Partial<EventHandlers<Events>>,
         options?: SubscriptionOptions
     ): SubscriptionCanceller;
     public on(
-        eventNameOrHandlers: EventNames<Events> | Partial<Events>,
-        handlerOrOptions: Events[EventNames<Events>] | SubscriptionOptions = {},
+        eventNameOrHandlers:
+            | EventNames<Events>
+            | Partial<EventHandlers<Events>>,
+        handlerOrOptions:
+            | EventHandler<Events[EventNames<Events>]>
+            | SubscriptionOptions = {},
         maybeOptions: SubscriptionOptions = {}
     ): SubscriptionCanceller {
         const subscriptionId = `subscription_${this
             .nextSubscriptionIdNumber++}`;
 
         // Normalize params from overloaded signatures
-        let handlers: Partial<Events>;
+        let handlers: Partial<EventHandlers<Events>>;
         let options: SubscriptionOptions;
         if (typeof eventNameOrHandlers === "string") {
             handlers = {};
-            handlers[
-                eventNameOrHandlers as EventNames<Events>
-            ] = handlerOrOptions as Events[EventNames<Events>];
+            handlers[eventNameOrHandlers] = handlerOrOptions as AnyEventHandler;
             options = maybeOptions;
         } else {
-            handlers = eventNameOrHandlers as Partial<Events>;
+            handlers = eventNameOrHandlers;
             options = handlerOrOptions as SubscriptionOptions;
         }
 
         // NOTE: Avoiding for(in) of Object.keys().forEach() here to
         //       optimize the transpiled code.
         for (const eventName in handlers) {
-            if (!handlers.hasOwnProperty(eventName) || !handlers[eventName]) {
+            if (
+                !handlers.hasOwnProperty(eventName) ||
+                !handlers[eventName as EventNames<Events>]
+            ) {
                 continue;
             }
 
-            let handler = handlers[eventName]! as HandlerFunction;
-
+            let handler = handlers[
+                eventName as EventNames<Events>
+            ]! as AnyEventHandler;
             if (options.once) {
                 handler = this.createOnceHandler(
                     handler,
                     subscriptionId,
-                    eventName
+                    eventName as EventNames<Events>
                 );
             }
 
@@ -288,10 +284,10 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      *          combination before calling the handler.
      */
     private createOnceHandler(
-        handler: HandlerFunction,
+        handler: AnyEventHandler,
         subscriptionId: string,
         eventName: EventNames<Events>
-    ): HandlerFunction {
+    ): AnyEventHandler {
         // NOTE: Avoiding using an arrow function here to optimize the
         //       transpiled code (particularly with regards to an ...args param
         //       versus the native arguments keyword).

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+-   Signatures of events MUST have a return type of `void` now. Previously could be
+    any type.
+-   Implementations of handlers may now return a `Promise<void>` (allows for async implementations).
 -   Simplified code related to storing/executing one-time subscriptions.
 -   Event handlers are now always called without a `this` context for simplicity.
 

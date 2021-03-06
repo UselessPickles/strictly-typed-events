@@ -5,20 +5,40 @@
  */
 
 /**
- * A function that accepts any params and returns any type.
+ * A general function signature type for any valid event signature.
+ * A function with any arguments whose return type is void (because return
+ * value of event handlers are ignored).
  */
-export type AnyFunction = (...args: any) => void;
+export type AnyEventFunction = (...args: any) => void;
+
+/**
+ * Converts an EventFunction type to an EventHandler type by changing
+ * the return type to allow `Promise<void>`.
+ * This allows for handlers to be implemented as async functions.
+ * @template EventFunction - an Event function (see {@link AnyEventFunction}).
+ */
+export type EventHandler<EventFunction extends AnyEventFunction> = (
+    ...args: Parameters<EventFunction>
+) => void | Promise<void>;
+
+/**
+ * A general function signature type for any valid event handler signature.
+ * This is slightly different than `AnyEventFunction` in that the return type
+ * may also be `Promise<void>`, which allows for handlers to be implemented
+ * as async functions.
+ */
+export type AnyEventHandler = EventHandler<AnyEventFunction>;
 
 /**
  * Used as a constraint for template parameters that are expected to be an
  * Events interface.
  * An Events interface is one where the types of all string properties are
- * non-optional functions.
+ * non-optional `AnyEventFunction`.
  * @template Events - A potentially valid Events interface.
  */
 export type EventsConstraint<Events> = Record<
     Extract<keyof Events, string>,
-    AnyFunction
+    AnyEventFunction
 >;
 
 /**
@@ -32,17 +52,16 @@ export type EventNames<Events extends EventsConstraint<Events>> = Extract<
 >;
 
 /**
- * An interface for a proxy for emitting events for a given Events interface.
- * For each event defined in the Event interface, this proxy has an identically
- * named method used to publish to all subscribed handlers for that event.
- * The signature of each method is nearly identical to that of the corresponding
- * event, except that the return type is `void`.
+ * Interface of valid event handler function signatures for a given Events
+ * interface.
+ * While all funtion signatures in an Events interface must return void,
+ * corresponding functions signatures in the EventHandlers interface may
+ * also return `Promise<void>`.
+ * This allows for subscription to events with async handler implementations.
  * @template Events - an Events interface (see {@link EventsConstraint}).
  */
-export type EventEmitProxy<Events extends EventsConstraint<Events>> = {
-    readonly [P in EventNames<Events>]: (
-        ...args: Parameters<Events[P]>
-    ) => void;
+export type EventHandlers<Events extends EventsConstraint<Events>> = {
+    [P in EventNames<Events>]: EventHandler<Events[P]>;
 };
 
 /**
@@ -78,7 +97,7 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
      */
     on<EventName extends EventNames<Events>>(
         name: EventName,
-        handler: Events[EventName],
+        handler: EventHandler<Events[EventName]>,
         options?: SubscriptionOptions
     ): SubscriptionCanceller;
     /**
@@ -95,7 +114,7 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
      * @returns A callback function that, when called, will cancel this subscription.
      */
     on(
-        handlers: Partial<Events>,
+        handlers: Partial<EventHandlers<Events>>,
         options?: SubscriptionOptions
     ): SubscriptionCanceller;
 }
