@@ -1,7 +1,7 @@
 {
     "name": "strictly-typed-events",
     "version": "0.0.4",
-    "description": "Event emit/subscribe library designed for convenience and type safety with TypeScript",
+    "description": "An Event emitting/subscription library designed for simplicity, convenience, and type-safety in TypeScript projects.",
     "repository": {
         "type": "git",
         "url": "https://github.com/UselessPickles/strictly-typed-events.git"
@@ -28,8 +28,7 @@
         "prettier:test": "prettier --ignore-unknown --list-different {*,**/*}",
         "prettier:fix": "prettier --ignore-unknown --write {*,**/*}",
         "build:types": "tsc --project tsconfig.build.json --pretty --noErrorTruncation --declaration true --emitDeclarationOnly true --declarationMap true --outDir dist/types",
-        "build:cjs": "tsc --project tsconfig.build.json --pretty --removeComments --noErrorTruncation --declaration false --outDir dist/cjs",
-        "build:es": "tsc --project tsconfig.build.json --pretty --removeComments --noErrorTruncation --declaration false -m es6 --outDir dist/es",
+        "build:rollup": "rollup -c",
         "build": "npm-run-all clean:dist --parallel build:*",
         "jest": "jest",
         "jest:coverage": "npm run clean:coverage && jest --coverage && opener coverage/lcov-report/index.html",
@@ -45,6 +44,8 @@
     },
     "license": "MIT",
     "devDependencies": {
+        "@rollup/plugin-commonjs": "17.1.0",
+        "@rollup/plugin-typescript": "8.2.0",
         "@types/jest": "26.0.18",
         "@types/node": "14.14.31",
         "coveralls": "3.1.0",
@@ -53,6 +54,7 @@
         "opener": "1.5.2",
         "prettier": "2.2.1",
         "rimraf": "3.0.2",
+        "rollup": "2.40.0",
         "ts-jest": "26.4.4",
         "tsd": "0.14.0",
         "tslint": "5.20.1",
