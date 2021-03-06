@@ -1,5 +1,4 @@
 import {
-    AnyFunction,
     EventsConstraint,
     EventNames,
     EventSource,
@@ -9,18 +8,17 @@ import {
 } from "./types.private";
 
 /**
- * Internal represenations of a single subscription to a single event.
+ * Opposite of the standard Readonly<> type.
+ * Makes all properties non-readonly.
  */
-interface EventSubscription<Events extends EventsConstraint<Events>> {
-    /**
-     * The handler for the event that is called whenever the event is emitted.
-     */
-    handler: Events[EventNames<Events>];
-    /**
-     * Subscription options.
-     */
-    options: SubscriptionOptions;
-}
+type Mutable<T> = {
+    -readonly [P in keyof T]: T[P];
+};
+
+/**
+ * Type for any non-specific event handler function.
+ */
+type HandlerFunction = (...args: any[]) => void;
 
 /**
  * Manages subscriptions to, and emitting of, events.
@@ -98,10 +96,10 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
     public readonly emit: EventEmitProxy<Events>;
 
     /**
-     * Map of event name -> map of subscription ID -> event subscription info
+     * Map of event name -> map of subscription ID -> event handler
      */
-    private readonly subscriptions: Partial<
-        Record<string, Record<string, EventSubscription<Events>>>
+    private readonly handlers: Partial<
+        Record<string, Record<string, HandlerFunction>>
     > = {};
 
     /**
@@ -119,14 +117,20 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      */
     private createEventHandlerCaller(
         eventName: EventNames<Events>
-    ): () => void {
+    ): HandlerFunction {
         // NOTE: Avoiding using an arrow function here to optimize the
-        //       transpiled code.
+        //       transpiled code (particularly with regards to an ...args param
+        //       versus the native arguments keyword).
         // tslint:disable:variable-name
         const _this = this;
         // tslint:disable:only-arrow-functions
         return function (): void {
-            const eventSubscriptions = _this.subscriptions[eventName] || {};
+            const eventSubscriptions = _this.handlers[eventName];
+
+            if (!eventSubscriptions) {
+                return;
+            }
+
             // NOTE: Avoiding for(in) of Object.keys().forEach() here to
             //       optimize the transpiled code.
             for (const subscriptionId in eventSubscriptions) {
@@ -134,13 +138,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
                     continue;
                 }
 
-                const subscription = eventSubscriptions[subscriptionId];
-
-                if (subscription.options.once) {
-                    _this.cancel(subscriptionId, eventName);
-                }
-
-                subscription.handler.apply(
+                eventSubscriptions[subscriptionId].apply(
                     undefined,
                     // Ugly typecast necessary to directly pass arguments
                     // through rather than spreading arguments (...arguments),
@@ -161,7 +159,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      * @returns The implementation of the emit method for the specified event.
      */
     private emitProxyGet(
-        target: EventEmitProxy<Events>,
+        target: Mutable<EventEmitProxy<Events>>,
         eventName: EventNames<Events>
     ): () => void {
         // If this eventName property has never been accessed before, then create
@@ -169,9 +167,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
         if (!target[eventName]) {
             // NOTE: Avoiding using an arrow function here to optimize the
             //       transpiled code.
-            (target[eventName] as AnyFunction) = this.createEventHandlerCaller(
-                eventName
-            );
+            target[eventName] = this.createEventHandlerCaller(eventName);
         }
 
         return target[eventName];
@@ -181,7 +177,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      * @param options - Configuration options for the events.
      */
     public constructor() {
-        this.emit = new Proxy({} as EventEmitProxy<Events>, {
+        this.emit = new Proxy({} as Mutable<EventEmitProxy<Events>>, {
             get: this.emitProxyGet.bind(this),
         });
     }
@@ -262,55 +258,73 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
                 continue;
             }
 
-            const handler = handlers[eventName]!;
+            let handler = handlers[eventName]! as HandlerFunction;
+
+            if (options.once) {
+                handler = this.createOnceHandler(
+                    handler,
+                    subscriptionId,
+                    eventName
+                );
+            }
 
             // Store the subscription
-            if (!this.subscriptions[eventName]) {
-                this.subscriptions[eventName] = {};
+            if (!this.handlers[eventName]) {
+                this.handlers[eventName] = {};
             }
-            this.subscriptions[eventName]![subscriptionId] = {
-                handler: handler,
-                options: options,
-            };
+            this.handlers[eventName]![subscriptionId] = handler;
         }
 
-        // NOTE: Avoiding using an arrow function here to optimize the
-        //       transpiled code.
         return this.cancel.bind(this, subscriptionId);
     }
 
     /**
+     * Wraps a handler function in a new handler function that automatically
+     * unsubscribes itself before calling the underlying handler.
+     * @param handler - An event handler.
+     * @param subscriptionId - ID of the subscription that this handler belongs to.
+     * @param eventName - Name of the event that this handler is for.
+     * @returns A function that will unsubscribe the subscriptionId/eventName
+     *          combination before calling the handler.
+     */
+    private createOnceHandler(
+        handler: HandlerFunction,
+        subscriptionId: string,
+        eventName: EventNames<Events>
+    ): HandlerFunction {
+        // NOTE: Avoiding using an arrow function here to optimize the
+        //       transpiled code (particularly with regards to an ...args param
+        //       versus the native arguments keyword).
+        const _this = this;
+        return function (): void {
+            // NOTE: Safe to assume that _this.handlers[eventName] is defined,
+            // because this code can only ever possibly be called for a
+            // subscription that was created within this class, and it's
+            // impossible for this to get executed before the handler is stored
+            // in the structure.
+            delete _this.handlers[eventName]![subscriptionId];
+            handler.apply(
+                undefined,
+                // Ugly typecast necessary to directly pass arguments
+                // through rather than spreading arguments (...arguments),
+                // which would transpile to unnecessary creation of a new array.
+                (arguments as unknown) as any[]
+            );
+        };
+    }
+
+    /**
      * Cancels a subscription.
-     * If only a subscription ID is provided, then cancels the entire
-     * subscription to all events.
-     * If the optional event name is provided, then only the subscription to the
-     * one event is canceled (all other event handlers from the original
-     * subscription remain active).
      *
-     * Silently ignores invalid subscription IDs, eventNames, and combinations
-     * of the two that are invalid/irrelevant (e.g., cancelling a subscription
-     * that was already cancelled; cancelling a subscription to a specific
-     * event for which the original subscription was not handling, etc.).
+     * Silently ignores invalid subscription IDs (e.g., cancelling a
+     * subscription that was already cancelled).
      *
      * @param subscriptionId - A subscription ID.
-     * @param eventName - Name of a specific event to cancel. Unspecified/undefined
-     *        to unsubscribe all event handlers in the subscription.
      */
-    private cancel(
-        subscriptionId: string,
-        eventName?: EventNames<Events>
-    ): void {
-        if (eventName) {
-            if (this.subscriptions[eventName]) {
-                delete this.subscriptions[eventName]![subscriptionId];
-            }
-        } else {
-            for (const subscribedEventName in this.subscriptions) {
-                if (this.subscriptions.hasOwnProperty(subscribedEventName)) {
-                    delete this.subscriptions[subscribedEventName]![
-                        subscriptionId
-                    ];
-                }
+    private cancel(subscriptionId: string): void {
+        for (const subscribedEventName in this.handlers) {
+            if (this.handlers.hasOwnProperty(subscribedEventName)) {
+                delete this.handlers[subscribedEventName]![subscriptionId];
             }
         }
     }
