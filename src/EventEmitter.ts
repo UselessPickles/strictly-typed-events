@@ -17,10 +17,6 @@ interface EventSubscription<Events extends EventsConstraint<Events>> {
      */
     handler: Events[EventNames<Events>];
     /**
-     * The `this` context in which the handler will be executed.
-     */
-    context: Partial<Events>;
-    /**
      * Subscription options.
      */
     options: SubscriptionOptions;
@@ -145,7 +141,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
                 }
 
                 subscription.handler.apply(
-                    subscription.context,
+                    undefined,
                     // Ugly typecast necessary to directly pass arguments
                     // through rather than spreading arguments (...arguments),
                     // which would transpile to unnecessary creation of a new array.
@@ -275,7 +271,6 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
             this.subscriptions[eventName]![subscriptionId] = {
                 handler: handler,
                 options: options,
-                context: handlers,
             };
         }
 

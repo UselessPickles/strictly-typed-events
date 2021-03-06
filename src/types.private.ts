@@ -87,6 +87,9 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
      * events with a single cancel.
      * @param handlers - An object containing handler implementations for any
      *        number of events defined in the Events interface, keyed by event name.
+     *        NOTE: Handlers are called as standalone functions without a `this`
+     *              context, so do not depend on `this` being a reference to the
+     *              `handlers` object you provide here.
      * @param options - Subscription options.
      *        (applied to ALL event handlers in the subscription)
      * @returns A callback function that, when called, will cancel this subscription.

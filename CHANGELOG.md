@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+-   Event handlers are now always called without a `this` context for simplicity.
+
 ### Removed
 
 -   `onSubscribe` handler support in `EventEmitter`. This was an interesting experiment,
