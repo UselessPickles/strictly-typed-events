@@ -1,5 +1,4 @@
 import { EventEmitter } from "./EventEmitter";
-import { SubscriptionCanceller } from "./types.private";
 
 // Sample Events interface for testing
 interface Events {
