@@ -1,4 +1,5 @@
 import { EventEmitter } from "./EventEmitter";
+import { SubscriptionCanceller } from "./types.private";
 
 // Sample Events interface for testing
 interface Events {
@@ -241,4 +242,89 @@ describe("Shorthand subscription to a single event", () => {
         // The one-time handler is NOT called again
         expect(fooOnce).toHaveBeenCalledTimes(1);
     });
+});
+
+test("Handlers are called in order", () => {
+    const output: number[] = [];
+
+    const emitter = new EventEmitter<Events>();
+
+    emitter.on("bar", () => {
+        output.push(1);
+    });
+
+    emitter.on("bar", () => {
+        output.push(2);
+    });
+
+    emitter.on("bar", () => {
+        output.push(3);
+    });
+
+    emitter.on("bar", () => {
+        output.push(4);
+    });
+
+    emitter.emit.bar();
+
+    expect(output).toEqual([1, 2, 3, 4]);
+});
+
+test("Handlers that are added during an emit are not called during the same emit", () => {
+    let output: number[] = [];
+    const emitter = new EventEmitter<Events>();
+
+    emitter.on("bar", () => {
+        output.push(1);
+    });
+
+    emitter.on("bar", () => {
+        output.push(2);
+
+        emitter.on("bar", () => {
+            output.push(3);
+        });
+    });
+
+    emitter.emit.bar();
+
+    expect(output).toEqual([1, 2]);
+
+    // reset the output array and emit the event again, confirming that all 3
+    // handlers are called now
+    output = [];
+    emitter.emit.bar();
+
+    expect(output).toEqual([1, 2, 3]);
+});
+
+test("Handlers that are removed during an emit are not called during that emit (unless they were already called before being cancelled)", () => {
+    let output: number[] = [];
+    const emitter = new EventEmitter<Events>();
+
+    const cancel1 = emitter.on("bar", () => {
+        output.push(1);
+    });
+
+    emitter.on("bar", () => {
+        output.push(2);
+        cancel1();
+        cancel3();
+    });
+
+    // This subscription will be cancelled before it has a chance to be called
+    const cancel3 = emitter.on("bar", () => {
+        output.push(3);
+    });
+
+    emitter.emit.bar();
+
+    expect(output).toEqual([1, 2]);
+
+    // reset the output array and emit the event again, both the 1st and 3rd
+    // subscriptions were cancelled.
+    output = [];
+    emitter.emit.bar();
+
+    expect(output).toEqual([2]);
 });
