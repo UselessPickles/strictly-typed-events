@@ -30,6 +30,22 @@ export type EventHandler<EventFunction extends AnyEventFunction> = (
 export type AnyEventHandler = EventHandler<AnyEventFunction>;
 
 /**
+ * Wrapper around an EventHandler to indicate that it should be used only one
+ * time, then automatuically cancel its own subscription.
+ * @template EventFunction - an Event function (see {@link AnyEventFunction}).
+ */
+export interface OnceEventHandler<EventFunction extends AnyEventFunction> {
+    /**
+     * Marker to identify this as a OnceEventHandler.
+     */
+    type: "once";
+    /**
+     * The underlying EventHandler.
+     */
+    handler: EventHandler<EventFunction>;
+}
+
+/**
  * Used as a constraint for template parameters that are expected to be an
  * Events interface.
  * An Events interface is one where the types of all string properties are
@@ -37,16 +53,27 @@ export type AnyEventHandler = EventHandler<AnyEventFunction>;
  * @template Events - A potentially valid Events interface.
  */
 export type EventsConstraint<Events> = Record<
-    Extract<keyof Events, string>,
+    Extract<keyof Events, string | symbol>,
     AnyEventFunction
 >;
 
 /**
- * Extracts all event names from an Events interface as a string literal
- * union type.
+ * Extracts the type of all event names from an Events interface.
+ * NOTE: This includes event names that are `symbol` types!
+ * See also: {@link StringEventNames}.
  * @template Events - an Events interface (see {@link EventsConstraint}).
  */
 export type EventNames<Events extends EventsConstraint<Events>> = Extract<
+    keyof Events,
+    string | symbol
+>;
+
+/**
+ * Extracts the type of only `string` based event names from an Events interface.
+ * See also: {@link EventNames}.
+ * @template Events - an Events interface (see {@link EventsConstraint}).
+ */
+export type StringEventNames<Events extends EventsConstraint<Events>> = Extract<
     keyof Events,
     string
 >;
@@ -54,27 +81,19 @@ export type EventNames<Events extends EventsConstraint<Events>> = Extract<
 /**
  * Interface of valid event handler function signatures for a given Events
  * interface.
- * While all funtion signatures in an Events interface must return void,
+ * While all function signatures in an Events interface must return void,
  * corresponding functions signatures in the EventHandlers interface may
  * also return `Promise<void>`.
  * This allows for subscription to events with async handler implementations.
+ * This interface also allows for special {@link OnceEventHandler} wrappers
+ * around event handler functions to indicate a one-time handler.
  * @template Events - an Events interface (see {@link EventsConstraint}).
  */
 export type EventHandlers<Events extends EventsConstraint<Events>> = {
-    [P in EventNames<Events>]: EventHandler<Events[P]>;
+    [P in Exclude<EventNames<Events>, symbol>]:
+        | EventHandler<Events[P]>
+        | OnceEventHandler<Events[P]>;
 };
-
-/**
- * Options for a subscription.
- * Applies to ALL event handlers in the subscription.
- */
-export interface SubscriptionOptions {
-    /**
-     * If true, then each event handler in this subscription will automatically
-     * unsubscribe itself after being called once.
-     */
-    once?: boolean;
-}
 
 /**
  * Callback function used to cancel a subscription.
@@ -90,20 +109,34 @@ export type SubscriptionCanceller = () => void;
 export interface EventSource<Events extends EventsConstraint<Events>> {
     /**
      * Subscribe to a single event.
-     * @param name - A valid event name for the Events interface.
+     * @param eventName - A valid event name for the Events interface.
      * @param handler - A handler function for the specified event.
      * @param options - Subscription options.
      * @returns A callback function that, when called, will cancel this subscription.
      */
     on<EventName extends EventNames<Events>>(
-        name: EventName,
-        handler: EventHandler<Events[EventName]>,
-        options?: SubscriptionOptions
+        eventName: EventName,
+        handler: EventHandler<Events[EventName]>
     ): SubscriptionCanceller;
+
+    /**
+     * Subscribe to a single event, but only for one emit of the event.
+     * @param eventName - A valid event name for the Events interface.
+     * @param handler - A handler function for the specified event.
+     * @param options - Subscription options.
+     * @returns A callback function that, when called, will cancel this subscription.
+     */
+    once<EventName extends EventNames<Events>>(
+        eventName: EventName,
+        handler: EventHandler<Events[EventName]>
+    ): SubscriptionCanceller;
+
     /**
      * Subscribe to one or more events as a single subscription.
      * This conveniently allows you to later cancel the subscription to multiple
      * events with a single cancel.
+     * NOTE: This only supports event names that are strings. For event names that
+     *       are unique symbols, you must use {@link #on} or {@link #once}.
      * @param handlers - An object containing handler implementations for any
      *        number of events defined in the Events interface, keyed by event name.
      *        NOTE: Handlers are called as standalone functions without a `this`
@@ -113,17 +146,13 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
      *        (applied to ALL event handlers in the subscription)
      * @returns A callback function that, when called, will cancel this subscription.
      */
-    on(
-        handlers: Partial<EventHandlers<Events>>,
-        options?: SubscriptionOptions
-    ): SubscriptionCanceller;
+    subscribe(handlers: Partial<EventHandlers<Events>>): SubscriptionCanceller;
 }
 
 /**
- * Helper type used to extract the Events interface from any {@link EventSource}.
+ * Helper type used to extract an EventHandlers interface from any {@link EventSource}.
  * this is useful, for example, if you need to reference the function signature
- * type of one of the events of an EventSource, but there is no publicly available
- * named typed for its Events interface.
+ * type of one of the event handlers of an EventSource
  *
  * @template T - An EventSource type.
  * @example
@@ -132,17 +161,19 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
  * // interface it uses, or its Events interface was inlined at creation.
  * declare const eventSource: EventSource<[unknown]>
  *
- * // Use `EventsType` to extract the type of an event so you can
+ * // Use `EventHandlersType` to extract the type of an event handler so you can
  * // pre-define a type-safe handler for the event.
- * const nameChangedHandler: EventsType<typeof eventSource>["nameChanged"] = (name) => {
+ * const nameChangedHandler: EventHandlersType<typeof eventSource>["nameChanged"] = (name) => {
  *     // parameter types are inferred correctly and return type is checked
  * };
  * ```
  */
-export type EventsType<T extends EventSource<any>> = T extends EventSource<
-    infer Events
->
-    ? Events
+export type EventHandlersType<
+    T extends EventSource<any>
+> = T extends EventSource<infer Events>
+    ? {
+          [P in EventNames<Events>]: EventHandler<Events[P]>;
+      }
     : never;
 
 /**

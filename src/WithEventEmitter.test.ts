@@ -31,7 +31,7 @@ test("General sanity check", () => {
     const fooCancelled = jest.fn();
     const fooOnce = jest.fn();
 
-    widget.on({
+    widget.subscribe({
         foo: fooAlways,
     });
 
@@ -41,14 +41,7 @@ test("General sanity check", () => {
 
     // One-time only subscription
     // (validating that subscription options are passed through)
-    widget.on(
-        {
-            foo: fooOnce,
-        },
-        {
-            once: true,
-        }
-    );
+    widget.once("foo", fooOnce);
 
     widget.triggerFoo(42, true);
 

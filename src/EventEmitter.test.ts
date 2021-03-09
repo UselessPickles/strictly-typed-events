@@ -1,9 +1,13 @@
 import { EventEmitter } from "./EventEmitter";
+import { once } from "./once";
+
+const baz = Symbol("baz");
 
 // Sample Events interface for testing
 interface Events {
     foo(a: number, b: boolean): void;
     bar(): void;
+    [baz](): void;
 }
 
 test("asEventSource()", () => {
@@ -29,16 +33,16 @@ describe("General emitting", () => {
         const bar1 = jest.fn();
         const bar2 = jest.fn();
 
-        emitter.on({
+        emitter.subscribe({
             foo: foo1,
         });
 
-        emitter.on({
+        emitter.subscribe({
             foo: foo2,
             bar: bar1,
         });
 
-        emitter.on({
+        emitter.subscribe({
             // explicit undefied event handler should not make anything blow up
             foo: undefined,
             bar: bar2,
@@ -97,18 +101,18 @@ describe("Cancel subscription", () => {
         const barUnsubscribed = jest.fn();
 
         // will NOT unsubscribe
-        emitter.on({
+        emitter.subscribe({
             foo: fooForever,
         });
 
         // WILL cancel
-        const cancel = emitter.on({
+        const cancel = emitter.subscribe({
             foo: fooUnsubscribed,
             bar: barUnsubscribed,
         });
 
         // will NOT unsubscribe
-        emitter.on({
+        emitter.subscribe({
             bar: barForever,
         });
 
@@ -137,7 +141,7 @@ describe("Cancel subscription", () => {
 
     test("Cancelling multiple times is ignored", () => {
         const emitter = new EventEmitter<Events>();
-        const cancel = emitter.on({
+        const cancel = emitter.subscribe({
             bar: () => undefined,
         });
 
@@ -151,7 +155,7 @@ describe("Cancel subscription", () => {
     });
 });
 
-describe("Event option: `once`", () => {
+describe("Event option: `once()`", () => {
     test("Automatically unsubscribe after handling one emit", () => {
         const emitter = new EventEmitter<Events>();
 
@@ -161,24 +165,19 @@ describe("Event option: `once`", () => {
         const barForever = jest.fn();
 
         // will NOT unsubscribe
-        emitter.on({
+        emitter.subscribe({
             foo: fooForever,
         });
 
         // WILL auto-unsubscribe after first emit to each event
         // (each event handler independently unsubscribed)
-        emitter.on(
-            {
-                foo: fooOnce,
-                bar: barOnce,
-            },
-            {
-                once: true,
-            }
-        );
+        emitter.subscribe({
+            foo: once(fooOnce),
+            bar: once(barOnce),
+        });
 
         // Will NOT unsubscribe
-        emitter.on({
+        emitter.subscribe({
             bar: barForever,
         });
 
@@ -221,9 +220,7 @@ describe("Shorthand subscription to a single event", () => {
 
         // One example with a subscription option
         // (Don't need to test all options and edge cases; just confirm that options are applied)
-        emitter.on("foo", fooOnce, {
-            once: true,
-        });
+        emitter.once("foo", fooOnce);
 
         emitter.emit.foo(42, true);
 
@@ -240,6 +237,18 @@ describe("Shorthand subscription to a single event", () => {
         expect(fooAlways).toHaveBeenLastCalledWith(1337, false);
         // The one-time handler is NOT called again
         expect(fooOnce).toHaveBeenCalledTimes(1);
+    });
+
+    test("can subscribe to unique symbole event names", () => {
+        const emitter = new EventEmitter<Events>();
+
+        const bazHandler = jest.fn();
+
+        emitter.on(baz, bazHandler);
+
+        emitter.emit[baz]();
+
+        expect(bazHandler).toHaveBeenCalledTimes(1);
     });
 });
 

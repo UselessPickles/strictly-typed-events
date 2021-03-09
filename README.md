@@ -78,19 +78,32 @@ const cancel = source.on("nameChanged", (newname, oldName) => {
 cancel();
 ```
 
+Subscribe to one event with a one-time-only handler:
+
+```ts
+// This handler will self-cancel its own subscription when it is called.
+// You can still store the returned cancel function and call it in case you
+// need to cancel the subscription before the first time it is called.
+source.once("nameChanged", (newname, oldName) => {
+    // do stuff
+});
+```
+
 Or subscribe to multiple events at once:
 
 ```ts
 // Hold onto the "cancel" function returned when subscribing.
-const cancel = source.on({
+const cancel = source.subscribe({
     // Provide handlers for any number of events in this object.
     // All type-safe, of course.
     nameChanged: (newname, oldName) => {
         // do stuff
     },
-    anotherEvent: (whatever) => {
+    // Wrap the handler in the `once()` function to make it a
+    // one-time-only handler
+    anotherEvent: once((whatever) => {
         // do stuff
-    },
+    }),
 });
 
 // Simply call the cancel function to cancel the subscription

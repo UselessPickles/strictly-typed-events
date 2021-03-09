@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+-   Reworked/simplified implementation of `EventEmitter` by extracting some of the code
+    into an abstract base class.
+-   Reworked `EventSource` interface so that there are now 3 distinct methods for subscribing:
+    -   `on()`: Subscribe to a single event by name
+        -   Supports unique symbol event names!
+    -   `once()`: Subscribe to a single event by name with a one-time-only handler.
+        -   Supports unique symbol event names!
+    -   `subscribe()`: Subscribe to one or more events via an object keyed by event name.
+        -   Wrap the handler implementation with the new `once()` function to mark it as a one-time-only handler.
+        -   Supports string event names only.
 -   Distributed code is now bundled with rollup.
 -   Signatures of events MUST have a return type of `void` now. Previously could be
     any type.

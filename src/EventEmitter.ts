@@ -1,13 +1,12 @@
+import { AbstractEventSource } from "./AbstractEventSource";
 import {
     AnyEventFunction,
     AnyEventHandler,
     EventsConstraint,
     EventHandler,
-    EventHandlers,
     EventNames,
     EventSource,
     SubscriptionCanceller,
-    SubscriptionOptions,
 } from "./types.private";
 
 /**
@@ -73,8 +72,9 @@ import {
  * cancel();
  * ```
  */
-export class EventEmitter<Events extends EventsConstraint<Events>>
-    implements EventSource<Events> {
+export class EventEmitter<
+    Events extends EventsConstraint<Events>
+> extends AbstractEventSource<Events> {
     /**
      * A convenient proxy for emitting to all subscribed handlers of any event.
      * For each event defined by the Events interface, a method of the same name,
@@ -87,7 +87,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      * Map of event name -> map of subscription ID -> event handler
      */
     private readonly handlers: Partial<
-        Record<string, Record<string, AnyEventHandler>>
+        Record<EventNames<Events>, Record<string, AnyEventHandler>>
     > = {};
 
     /**
@@ -167,6 +167,7 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      * @param options - Configuration options for the events.
      */
     public constructor() {
+        super();
         this.emit = new Proxy({} as Events, {
             get: this.emitProxyGet.bind(this),
         });
@@ -207,106 +208,20 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      * @inheritdoc
      */
     public on<EventName extends EventNames<Events>>(
-        name: EventName,
-        handler: EventHandler<Events[EventName]>,
-        options?: SubscriptionOptions
-    ): SubscriptionCanceller;
-    /**
-     * @override
-     * @inheritdoc
-     */
-    public on(
-        handlers: Partial<EventHandlers<Events>>,
-        options?: SubscriptionOptions
-    ): SubscriptionCanceller;
-    public on(
-        eventNameOrHandlers:
-            | EventNames<Events>
-            | Partial<EventHandlers<Events>>,
-        handlerOrOptions:
-            | EventHandler<Events[EventNames<Events>]>
-            | SubscriptionOptions = {},
-        maybeOptions: SubscriptionOptions = {}
+        eventName: EventName,
+        handler: EventHandler<Events[EventName]>
     ): SubscriptionCanceller {
         const subscriptionId = `subscription_${this
             .nextSubscriptionIdNumber++}`;
 
-        // Normalize params from overloaded signatures
-        let handlers: Partial<EventHandlers<Events>>;
-        let options: SubscriptionOptions;
-        if (typeof eventNameOrHandlers === "string") {
-            handlers = {};
-            handlers[eventNameOrHandlers] = handlerOrOptions as AnyEventHandler;
-            options = maybeOptions;
-        } else {
-            handlers = eventNameOrHandlers;
-            options = handlerOrOptions as SubscriptionOptions;
+        let eventHandlers = this.handlers[eventName];
+        if (!eventHandlers) {
+            eventHandlers = this.handlers[eventName] = {};
         }
 
-        // NOTE: Avoiding for(in) of Object.keys().forEach() here to
-        //       optimize the transpiled code.
-        for (const eventName in handlers) {
-            if (
-                !handlers.hasOwnProperty(eventName) ||
-                !handlers[eventName as EventNames<Events>]
-            ) {
-                continue;
-            }
-
-            let handler = handlers[
-                eventName as EventNames<Events>
-            ]! as AnyEventHandler;
-            if (options.once) {
-                handler = this.createOnceHandler(
-                    handler,
-                    subscriptionId,
-                    eventName as EventNames<Events>
-                );
-            }
-
-            // Store the subscription
-            if (!this.handlers[eventName]) {
-                this.handlers[eventName] = {};
-            }
-            this.handlers[eventName]![subscriptionId] = handler;
-        }
+        eventHandlers[subscriptionId] = handler;
 
         return this.cancel.bind(this, subscriptionId);
-    }
-
-    /**
-     * Wraps a handler function in a new handler function that automatically
-     * unsubscribes itself before calling the underlying handler.
-     * @param handler - An event handler.
-     * @param subscriptionId - ID of the subscription that this handler belongs to.
-     * @param eventName - Name of the event that this handler is for.
-     * @returns A function that will unsubscribe the subscriptionId/eventName
-     *          combination before calling the handler.
-     */
-    private createOnceHandler(
-        handler: AnyEventHandler,
-        subscriptionId: string,
-        eventName: EventNames<Events>
-    ): AnyEventHandler {
-        // NOTE: Avoiding using an arrow function here to optimize the
-        //       transpiled code (particularly with regards to an ...args param
-        //       versus the native arguments keyword).
-        const _this = this;
-        return function (): void {
-            // NOTE: Safe to assume that _this.handlers[eventName] is defined,
-            // because this code can only ever possibly be called for a
-            // subscription that was created within this class, and it's
-            // impossible for this to get executed before the handler is stored
-            // in the structure.
-            delete _this.handlers[eventName]![subscriptionId];
-            handler.apply(
-                undefined,
-                // Ugly typecast necessary to directly pass arguments
-                // through rather than spreading arguments (...arguments),
-                // which would transpile to unnecessary creation of a new array.
-                (arguments as unknown) as any[]
-            );
-        };
     }
 
     /**
@@ -318,9 +233,15 @@ export class EventEmitter<Events extends EventsConstraint<Events>>
      * @param subscriptionId - A subscription ID.
      */
     private cancel(subscriptionId: string): void {
-        for (const subscribedEventName in this.handlers) {
-            if (this.handlers.hasOwnProperty(subscribedEventName)) {
-                delete this.handlers[subscribedEventName]![subscriptionId];
+        for (const eventName in this.handlers) {
+            if (this.handlers.hasOwnProperty(eventName)) {
+                const eventHandlers = this.handlers[
+                    eventName as EventNames<Events>
+                ];
+
+                if (eventHandlers) {
+                    delete eventHandlers[subscriptionId];
+                }
             }
         }
     }

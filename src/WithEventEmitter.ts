@@ -5,7 +5,6 @@ import {
     EventHandlers,
     EventSource,
     EventNames,
-    SubscriptionOptions,
     SubscriptionCanceller,
 } from "./types.private";
 
@@ -86,18 +85,29 @@ export class WithEventEmitter<Events extends EventsConstraint<Events>>
      */
     public on<EventName extends EventNames<Events>>(
         eventName: EventName,
-        handler: EventHandler<Events[EventName]>,
-        options?: SubscriptionOptions
-    ): SubscriptionCanceller;
+        handler: EventHandler<Events[EventName]>
+    ): SubscriptionCanceller {
+        return this.eventEmitter.on(eventName, handler);
+    }
+
     /**
      * @override
      * @inheritdoc
      */
-    public on(
-        handlers: Partial<EventHandlers<Events>>,
-        options?: SubscriptionOptions
-    ): SubscriptionCanceller;
-    public on(): SubscriptionCanceller {
-        return this.eventEmitter.on.apply(this.eventEmitter, arguments as any);
+    public once<EventName extends EventNames<Events>>(
+        eventName: EventName,
+        handler: EventHandler<Events[EventName]>
+    ): SubscriptionCanceller {
+        return this.eventEmitter.once(eventName, handler);
+    }
+
+    /**
+     * @override
+     * @inheritdoc
+     */
+    public subscribe(
+        handlers: Partial<EventHandlers<Events>>
+    ): SubscriptionCanceller {
+        return this.eventEmitter.subscribe(handlers);
     }
 }

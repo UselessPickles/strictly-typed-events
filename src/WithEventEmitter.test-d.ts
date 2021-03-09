@@ -20,6 +20,8 @@ class Widget extends WithEventEmitter<Events> {
 
 const widget = new Widget();
 
-// Verify that the signature of the inherited "on" method is the same
-// as the signature of the same method on EventPublisher.
+// Verify that the signature of the inherited methods method are the same
+// as the signature of the same methods on EventEmitter.
 expectType<EventEmitter<Events>["on"]>(widget.on);
+expectType<EventEmitter<Events>["once"]>(widget.once);
+expectType<EventEmitter<Events>["subscribe"]>(widget.subscribe);
