@@ -59,7 +59,8 @@ style comments on all types/classes/methods/etc.) for full details.
 ## Subscribing and Cancelling Subscriptions
 
 For the following examples, assume there is a variable `source` that implements
-this library's `EventSource` interface (has the `on()` method to subscribe to events).
+this library's `EventSource` interface (has the `on()`/`once()`/`subscribe()`
+methods to subscribe to events).
 
 Subscribe to one event at a time:
 
