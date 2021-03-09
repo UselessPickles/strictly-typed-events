@@ -204,7 +204,6 @@ export class EventEmitter<
     }
 
     /**
-     * @override
      * @inheritdoc
      */
     public on<EventName extends EventNames<Events>>(

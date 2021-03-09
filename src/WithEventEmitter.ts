@@ -80,7 +80,6 @@ export class WithEventEmitter<Events extends EventsConstraint<Events>>
     }
 
     /**
-     * @override
      * @inheritdoc
      */
     public on<EventName extends EventNames<Events>>(
@@ -91,7 +90,6 @@ export class WithEventEmitter<Events extends EventsConstraint<Events>>
     }
 
     /**
-     * @override
      * @inheritdoc
      */
     public once<EventName extends EventNames<Events>>(
@@ -102,7 +100,6 @@ export class WithEventEmitter<Events extends EventsConstraint<Events>>
     }
 
     /**
-     * @override
      * @inheritdoc
      */
     public subscribe(

@@ -32,7 +32,7 @@ export abstract class AbstractEventSource<
         eventName: EventName,
         handler: EventHandler<Events[EventName]>
     ): SubscriptionCanceller {
-        // Wrap the handler in a function that will self-cancel when it is,
+        // Wrap the handler in a function that will self-cancel when it is called
         // tslint:disable:only-arrow-functions
         const wrappedHandler = function (): void | Promise<void> {
             cancel();
