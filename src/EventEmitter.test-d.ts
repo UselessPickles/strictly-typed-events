@@ -1,8 +1,7 @@
 // tslint:disable:no-unused-expression
 // NOTE: import from root/index to test against publicly exported types
-import { EventEmitter, SubscriptionCanceller, EventSource } from ".";
+import { EventEmitter, SubscriptionCanceller, EventSource, once } from ".";
 import { expectType, expectError } from "tsd";
-import { once } from "./once";
 
 const baz = Symbol("baz");
 const bad = Symbol("bad");
