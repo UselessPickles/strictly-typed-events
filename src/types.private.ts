@@ -59,8 +59,6 @@ export type EventsConstraint<Events> = Record<
 
 /**
  * Extracts the type of all event names from an Events interface.
- * NOTE: This includes event names that are `symbol` types!
- * See also: {@link StringEventNames}.
  * @template Events - an Events interface (see {@link EventsConstraint}).
  */
 export type EventNames<Events extends EventsConstraint<Events>> = Extract<
@@ -69,28 +67,16 @@ export type EventNames<Events extends EventsConstraint<Events>> = Extract<
 >;
 
 /**
- * Extracts the type of only `string` based event names from an Events interface.
- * See also: {@link EventNames}.
- * @template Events - an Events interface (see {@link EventsConstraint}).
- */
-export type StringEventNames<Events extends EventsConstraint<Events>> = Extract<
-    keyof Events,
-    string
->;
-
-/**
- * Interface of valid event handler function signatures for a given Events
- * interface.
- * While all function signatures in an Events interface must return void,
- * corresponding functions signatures in the EventHandlers interface may
- * also return `Promise<void>`.
- * This allows for subscription to events with async handler implementations.
+ * Interface of event handlers that can be supplied to {@link EventSource#subscribe}
+ * to subscribe to multiple events at once.
+ * Each property name must be a valid event name, and each property value
+ * must be a valid event handler for that event name.
  * This interface also allows for special {@link OnceEventHandler} wrappers
  * around event handler functions to indicate a one-time handler.
  * @template Events - an Events interface (see {@link EventsConstraint}).
  */
 export type EventHandlers<Events extends EventsConstraint<Events>> = {
-    [P in Exclude<EventNames<Events>, symbol>]:
+    [P in EventNames<Events>]:
         | EventHandler<Events[P]>
         | OnceEventHandler<Events[P]>;
 };

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.6] 2021-03-09
+
+## Added
+
+-   Support for `unique symbol` event names to the `EventSource.subscribe()` method.
+
 ## [0.0.5] 2021-03-08
 
 ### Changed
@@ -13,9 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     into an abstract base class.
 -   Reworked `EventSource` interface so that there are now 3 distinct methods for subscribing:
     -   `on()`: Subscribe to a single event by name
-        -   Supports unique symbol event names!
+        -   Supports `unique symbol` event names!
     -   `once()`: Subscribe to a single event by name with a one-time-only handler.
-        -   Supports unique symbol event names!
+        -   Supports `unique symbol` event names!
     -   `subscribe()`: Subscribe to one or more events via an object keyed by event name.
         -   Wrap the handler implementation with the new `once()` function to mark it as a one-time-only handler.
         -   Supports string event names only.
@@ -70,6 +76,7 @@ TODO:
 -   Write good README content (sorry; source code documentation will have to suffice for now).
 -   Use rollup to bundle code?
 
+[0.0.6]: https://github.com/UselessPickles/strictly-typed-events/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/UselessPickles/strictly-typed-events/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/UselessPickles/strictly-typed-events/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/UselessPickles/strictly-typed-events/compare/v0.0.2...v0.0.3

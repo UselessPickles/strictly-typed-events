@@ -90,6 +90,20 @@ const eventEmitter = new EventEmitter<Events>();
         })
     );
 
+    // subscribe to a valid unique symbol event name
+    eventEmitter.subscribe({
+        [baz]: (a) => {
+            expectType<boolean>(a);
+        },
+    });
+
+    // subscribe to an invalid unique symbol event name
+    expectError(
+        eventEmitter.subscribe({
+            [bad]: () => undefined,
+        })
+    );
+
     // returns a SubscriptionCanceller
     expectType<SubscriptionCanceller>(eventEmitter.subscribe({}));
 }
@@ -125,12 +139,12 @@ const eventEmitter = new EventEmitter<Events>();
         })
     );
 
-    // subscribe to a valid unique eymbol event name
+    // subscribe to a valid unique symbol event name
     eventEmitter.on(baz, (a) => {
         expectType<boolean>(a);
     });
 
-    // subscribe to an invalid unique eymbol event name
+    // subscribe to an invalid unique symbol event name
     expectError(eventEmitter.on(bad, () => undefined));
 
     // returns a SubscriptionCanceller
@@ -168,12 +182,12 @@ const eventEmitter = new EventEmitter<Events>();
         })
     );
 
-    // subscribe to a valid unique eymbol event name
+    // subscribe to a valid unique symbol event name
     eventEmitter.once(baz, (a) => {
         expectType<boolean>(a);
     });
 
-    // subscribe to an invalid unique eymbol event name
+    // subscribe to an invalid unique symbol event name
     expectError(eventEmitter.once(bad, () => undefined));
 
     // returns a SubscriptionCanceller

@@ -56,8 +56,19 @@ export abstract class AbstractEventSource<
         // List of cancel functions for each individual event subscription
         const cancelFunctions: SubscriptionCanceller[] = [];
 
+        // Get all property names from the handlers object, including
+        // property symbols (for unique symbol event names).
+        // ASSUMPTION: `handlers` should be a simple object containing ONLY
+        // valid event names/handlers, so we should be able to safely assume
+        // that ALL "own" property names/symbols must be valid event names.
+        const eventNames = (Object.getOwnPropertyNames(
+            handlers
+        ) as EventNames<Events>[]).concat(
+            Object.getOwnPropertySymbols(handlers) as EventNames<Events>[]
+        );
+
         // Subscribe to each event individually in terms of `on()` or `once()`
-        for (const eventName in handlers) {
+        for (const eventName of eventNames) {
             if (!handlers.hasOwnProperty(eventName)) {
                 continue;
             }

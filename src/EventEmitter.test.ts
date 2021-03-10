@@ -32,6 +32,7 @@ describe("General emitting", () => {
         const foo2 = jest.fn();
         const bar1 = jest.fn();
         const bar2 = jest.fn();
+        const baz1 = jest.fn();
 
         emitter.subscribe({
             foo: foo1,
@@ -46,6 +47,8 @@ describe("General emitting", () => {
             // explicit undefied event handler should not make anything blow up
             foo: undefined,
             bar: bar2,
+            // test subscribing to a unique symbol event name
+            [baz]: baz1,
         });
 
         // None of the handlers are called yet
@@ -53,6 +56,7 @@ describe("General emitting", () => {
         expect(foo2).not.toHaveBeenCalled();
         expect(bar1).not.toHaveBeenCalled();
         expect(bar2).not.toHaveBeenCalled();
+        expect(baz1).not.toHaveBeenCalled();
 
         // Emit "foo"
         expect(emitter.emit.foo(42, true)).toBe(undefined);
@@ -88,6 +92,11 @@ describe("General emitting", () => {
         expect(foo1).toHaveBeenLastCalledWith(1337, false);
         expect(foo2).toHaveBeenCalledTimes(2);
         expect(foo2).toHaveBeenLastCalledWith(1337, false);
+
+        // emit "baz" event (testing that unique symbol subscription works)
+        emitter.emit[baz]();
+
+        expect(baz1).toHaveBeenCalledTimes(1);
     });
 });
 
