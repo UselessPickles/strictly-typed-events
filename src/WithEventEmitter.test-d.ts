@@ -24,4 +24,5 @@ const widget = new Widget();
 // as the signature of the same methods on EventEmitter.
 expectType<EventEmitter<Events>["on"]>(widget.on);
 expectType<EventEmitter<Events>["once"]>(widget.once);
+expectType<EventEmitter<Events>["onceAsPromise"]>(widget.onceAsPromise);
 expectType<EventEmitter<Events>["subscribe"]>(widget.subscribe);

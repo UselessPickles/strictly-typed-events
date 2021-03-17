@@ -194,3 +194,26 @@ const eventEmitter = new EventEmitter<Events>();
         eventEmitter.once("bar", () => undefined)
     );
 }
+
+// onceAsPromise()
+{
+    // subscribe with invalid event name
+    expectError(eventEmitter.onceAsPromise("broken"));
+
+    // subscribe with valid event name
+    eventEmitter.onceAsPromise("foo").then(([a, b]) => {
+        expectType<number>(a);
+        expectType<boolean>(b);
+    });
+
+    // subscribe to a valid unique symbol event name
+    eventEmitter.onceAsPromise(baz).then(([a]) => {
+        expectType<boolean>(a);
+    });
+
+    // subscribe to an invalid unique symbol event name
+    expectError(eventEmitter.onceAsPromise(bad));
+
+    // returns a Promise
+    expectType<Promise<[number, boolean]>>(eventEmitter.onceAsPromise("foo"));
+}

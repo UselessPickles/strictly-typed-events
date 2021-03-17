@@ -50,6 +50,26 @@ export abstract class AbstractEventSource<
     /**
      * @inheritdoc
      */
+    public onceAsPromise<EventName extends EventNames<Events>>(
+        eventName: EventName
+    ): Promise<Parameters<EventHandler<Events[EventName]>>> {
+        return new Promise<Parameters<EventHandler<Events[EventName]>>>(
+            (resolve) => {
+                this.once(eventName, function (): void {
+                    resolve.call(
+                        undefined,
+                        (arguments as unknown) as Parameters<
+                            EventHandler<Events[EventName]>
+                        >
+                    );
+                });
+            }
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
     public subscribe(
         handlers: Partial<EventHandlers<Events>>
     ): SubscriptionCanceller {

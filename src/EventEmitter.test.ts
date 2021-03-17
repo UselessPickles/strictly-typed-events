@@ -1,5 +1,6 @@
 import { EventEmitter } from "./EventEmitter";
 import { once } from "./once";
+import flushPromises from "flush-promises";
 
 const baz = Symbol("baz");
 
@@ -248,7 +249,7 @@ describe("Shorthand subscription to a single event", () => {
         expect(fooOnce).toHaveBeenCalledTimes(1);
     });
 
-    test("can subscribe to unique symbole event names", () => {
+    test("can subscribe to unique symbol event names", () => {
         const emitter = new EventEmitter<Events>();
 
         const bazHandler = jest.fn();
@@ -259,6 +260,23 @@ describe("Shorthand subscription to a single event", () => {
 
         expect(bazHandler).toHaveBeenCalledTimes(1);
     });
+});
+
+test("onceAsPromise()", async () => {
+    const emitter = new EventEmitter<Events>();
+    const fooPromiseHandler = jest.fn();
+
+    emitter.onceAsPromise("foo").then(fooPromiseHandler);
+    await flushPromises();
+
+    expect(fooPromiseHandler).not.toHaveBeenCalled();
+
+    emitter.emit.foo(42, true);
+    await flushPromises();
+
+    expect(fooPromiseHandler).toHaveBeenCalledTimes(1);
+    expect(fooPromiseHandler.mock.calls[0][0][0]).toBe(42);
+    expect(fooPromiseHandler.mock.calls[0][0][1]).toBe(true);
 });
 
 test("Handlers are called in order", () => {

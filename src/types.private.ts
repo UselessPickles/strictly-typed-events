@@ -97,7 +97,6 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
      * Subscribe to a single event.
      * @param eventName - A valid event name for the Events interface.
      * @param handler - A handler function for the specified event.
-     * @param options - Subscription options.
      * @returns A callback function that, when called, will cancel this subscription.
      */
     on<EventName extends EventNames<Events>>(
@@ -109,13 +108,23 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
      * Subscribe to a single event, but only for one emit of the event.
      * @param eventName - A valid event name for the Events interface.
      * @param handler - A handler function for the specified event.
-     * @param options - Subscription options.
      * @returns A callback function that, when called, will cancel this subscription.
      */
     once<EventName extends EventNames<Events>>(
         eventName: EventName,
         handler: EventHandler<Events[EventName]>
     ): SubscriptionCanceller;
+
+    /**
+     * Returns a Promise that resolves the next time the specified event is
+     * emitted. The Promise value is a tuple of all arguments to the event handler.
+     * @param eventName - A valid event name for the Events interface.
+     * @returns a Promise that resolves the next time the specified event is
+     *          emitted.
+     */
+    onceAsPromise<EventName extends EventNames<Events>>(
+        eventName: EventName
+    ): Promise<Parameters<EventHandler<Events[EventName]>>>;
 
     /**
      * Subscribe to one or more events as a single subscription.
@@ -128,8 +137,6 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
      *        NOTE: Handlers are called as standalone functions without a `this`
      *              context, so do not depend on `this` being a reference to the
      *              `handlers` object you provide here.
-     * @param options - Subscription options.
-     *        (applied to ALL event handlers in the subscription)
      * @returns A callback function that, when called, will cancel this subscription.
      */
     subscribe(handlers: Partial<EventHandlers<Events>>): SubscriptionCanceller;

@@ -1,4 +1,5 @@
 import { WithEventEmitter } from "./WithEventEmitter";
+import flushPromises from "flush-promises";
 
 // Sample Events interface for testing
 interface Events {
@@ -24,12 +25,13 @@ class Widget extends WithEventEmitter<Events> {
 // - Subscription options are applied.
 // - Can cancel subscriptions.
 // - Can emit events via `emit` property inherited from WithEventEmitter.
-test("General sanity check", () => {
+test("General sanity check", async () => {
     const widget = new Widget();
 
     const fooAlways = jest.fn();
     const fooCancelled = jest.fn();
     const fooOnce = jest.fn();
+    const fooPromiseHandler = jest.fn();
 
     widget.subscribe({
         foo: fooAlways,
@@ -43,7 +45,10 @@ test("General sanity check", () => {
     // (validating that subscription options are passed through)
     widget.once("foo", fooOnce);
 
+    widget.onceAsPromise("foo").then(fooPromiseHandler);
+
     widget.triggerFoo(42, true);
+    await flushPromises();
 
     // All handlers called by first emit
     expect(fooAlways).toHaveBeenCalledTimes(1);
@@ -52,6 +57,9 @@ test("General sanity check", () => {
     expect(fooCancelled).toHaveBeenLastCalledWith(42, true);
     expect(fooOnce).toHaveBeenCalledTimes(1);
     expect(fooOnce).toHaveBeenLastCalledWith(42, true);
+    expect(fooPromiseHandler).toHaveBeenCalledTimes(1);
+    expect(fooPromiseHandler.mock.calls[0][0][0]).toBe(42);
+    expect(fooPromiseHandler.mock.calls[0][0][1]).toBe(true);
 
     widget.triggerFoo(1337, false);
 
@@ -62,6 +70,7 @@ test("General sanity check", () => {
     expect(fooCancelled).toHaveBeenLastCalledWith(1337, false);
     // One-time subscription not called again
     expect(fooOnce).toHaveBeenCalledTimes(1);
+    expect(fooPromiseHandler).toHaveBeenCalledTimes(1);
 
     cancel();
     widget.triggerFoo(-1, true);
@@ -73,4 +82,5 @@ test("General sanity check", () => {
     expect(fooCancelled).toHaveBeenCalledTimes(2);
     // One-time subscription not called again
     expect(fooOnce).toHaveBeenCalledTimes(1);
+    expect(fooPromiseHandler).toHaveBeenCalledTimes(1);
 });

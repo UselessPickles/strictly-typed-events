@@ -102,6 +102,15 @@ export class WithEventEmitter<Events extends EventsConstraint<Events>>
     /**
      * @inheritdoc
      */
+    public onceAsPromise<EventName extends EventNames<Events>>(
+        eventName: EventName
+    ): Promise<Parameters<EventHandler<Events[EventName]>>> {
+        return this.eventEmitter.onceAsPromise(eventName);
+    }
+
+    /**
+     * @inheritdoc
+     */
     public subscribe(
         handlers: Partial<EventHandlers<Events>>
     ): SubscriptionCanceller {

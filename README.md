@@ -90,6 +90,16 @@ source.once("nameChanged", (newname, oldName) => {
 });
 ```
 
+Get a Promise that will be resolved the next time an event is emitted:
+
+```ts
+// Similar to `once()`, except that it returns a promise that resolves to a
+// tuple of the event handler arguments.
+source.onceAsPromise("nameChanged").then(([newname, oldName]) => {
+    // do stuff
+});
+```
+
 Or subscribe to multiple events at once:
 
 ```ts
