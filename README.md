@@ -1,6 +1,6 @@
 [![npm version](https://img.shields.io/npm/v/strictly-typed-events.svg)](https://www.npmjs.com/package/strictly-typed-events)
 [![Join the chat at https://gitter.im/ts-enum-util/Lobby](https://badges.gitter.im/UselessPickles/strictly-typed-events//Lobby.svg)](https://gitter.im/UselessPickles/strictly-typed-events)
-[![Build Status](https://travis-ci.org/UselessPickles/strictly-typed-events.svg?branch=main)](https://travis-ci.org/UselessPickles/strictly-typed-events)
+[![Build Status](https://app.travis-ci.com/UselessPickles/strictly-typed-events.svg?branch=main)](https://app.travis-ci.com/UselessPickles/strictly-typed-events)
 [![Coverage Status](https://coveralls.io/repos/github/UselessPickles/strictly-typed-events/badge.svg?branch=main)](https://coveralls.io/github/UselessPickles/strictly-typed-events?branch=main)
 
 # strictly-typed-events
@@ -209,10 +209,10 @@ class Foo {
         anotherEvent(whatever: number): void;
     }>();
 
-    // Also expose your `EventEmitter` publicly, but typecast
-    // as just an `EventSource` that only exposes the ability
-    // subscribe to events.
-    public readonly events = this.emitter.asEventSource();
+    // Also expose your `EventEmitter` publicly, but as an
+    // `EventSource` implementationthat only exposes the
+    // ability subscribe to events.
+    public readonly events = this.emitter.toEventSource();
 
     public constructor(private readonly name: string) {}
 
