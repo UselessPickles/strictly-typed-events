@@ -16,15 +16,17 @@ import {
  * - Call {@link EventEmitter#on} to subscribe to one or more events.
  * - Call the function returned by {@link EventEmitter#on} to cancel
  * the subscription.
- * - Expose an EventEmitter typecast to {@link EventSource} to restrict
+ * - Expose an {@link EventSource} of this EventEmitter to restrict
  * consuming code to subscribing only (keep the emitting part private).
- *     - See {@link EventEmitter#asEventSource}.
+ *     - See {@link EventEmitter#toEventSource}.
  *     - See {@link EventSourceType}
  * - Consider extending {@link WithEventEmitter} to more conveniently make
  * your class an EventSource without publicly exposing the means to emit events.
+ *
  * NOTE: You must explicitly provide an interface for your events as the Events
  *       template parameter.
- * @template Events - An interface/type containing only methods, where each method
+ *
+ * @typeParam Events - An interface/type containing only methods, where each method
  *           name is the event name, and the method signatures is the signature
  *           for handlers of the event.
  * @example
@@ -41,10 +43,10 @@ import {
  *
  *     // Expose the EventEmitter publicly, but only as an EventSource,
  *     // so external code can only subscribe to events.
- *     // Using asEventSource() allows the `events` field's type to be
+ *     // Using toEventSource() allows the `events` field's type to be
  *     // conveniently inferred, rather than needing to manually specify its
  *     // type correctly.
- *     public events = this.emitter.asEventSource();
+ *     public events = this.emitter.toEventSource();
  *
  *     public setName(name: string): void {
  *         this.name = name;
@@ -140,6 +142,7 @@ export class EventEmitter<
     /**
      * An implementation for the `get` handler of a Proxy used to implement
      * the {@link #emit} property.
+     *
      * Dynamically creates/caches/returns an implementation of an "emit" method
      * for the specified event.
      * @param target - A reference to the `emit` property.
@@ -174,13 +177,14 @@ export class EventEmitter<
     }
 
     /**
-     * Convenience method that typecasts this EventEmitter to an EventSource
-     * to expose only the means to subscribe to events, without exposing the
-     * means to emit events.
+     * Creates a "readonly" version of this EventEmitter as an EventSource
+     * implementation to expose only the means to subscribe to events, without
+     * exposing the means to emit events.
      *
      * See also: {@link EventSourceType}
      *
-     * @returns - This EventEmitter, typecast as an EventSource.
+     * @returns - A new EventSource that can be used subscribe to this
+     *            EventEmitter's events..
      * @example
      * ```
      * class MyClass {
@@ -192,15 +196,20 @@ export class EventEmitter<
      *
      *     // Expose the EventEmitter publicly, but only as an EventSource,
      *     // so external code can only subscribe to events.
-     *     // Using asEventSource() allows the `events` field's type to be
+     *     // Using toEventSource() allows the `events` field's type to be
      *     // conveniently inferred, rather than needing to manually specify its
      *     // type correctly.
-     *     public events = this.emitter.asEventSource();
+     *     public events = this.emitter.toEventSource();
      * }
      * ```
      */
-    public asEventSource(): EventSource<Events> {
-        return this;
+    public toEventSource(): EventSource<Events> {
+        return {
+            on: this.on.bind(this),
+            once: this.once.bind(this),
+            onceAsPromise: this.onceAsPromise.bind(this),
+            subscribe: this.subscribe.bind(this),
+        };
     }
 
     /**

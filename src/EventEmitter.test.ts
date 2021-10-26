@@ -11,10 +11,32 @@ interface Events {
     [baz](): void;
 }
 
-test("asEventSource()", () => {
-    const emitter = new EventEmitter<Events>();
+describe("toEventSource()", () => {
+    test("Returns a new EventSource", () => {
+        const emitter = new EventEmitter<Events>();
 
-    expect(emitter.asEventSource()).toBe(emitter);
+        // Does NOT simply return the emitter typecast to an EventSource
+        expect(emitter.toEventSource()).not.toBe(emitter);
+    });
+
+    // NOTE: Only doing a basic sanity test of one method of subscribing to an event.
+    //       Assuming that the simplistic design of the code and type safety guarantees
+    //       that all subscription methods/hehaviors will equally be passed through properly.
+    test("Passes through subscriptions to the original EventEmitter", () => {
+        const emitter = new EventEmitter<Events>();
+        const eventSource = emitter.toEventSource();
+
+        // Subscribe to the resulting EventSource
+        const foo = jest.fn();
+        eventSource.on("foo", foo);
+
+        // Emit an event via the original EventEmitter
+        emitter.emit.foo(42, true);
+
+        // event handler was called
+        expect(foo).toHaveBeenCalledTimes(1);
+        expect(foo).toHaveBeenLastCalledWith(42, true);
+    });
 });
 
 describe("General emitting", () => {

@@ -15,7 +15,7 @@ export type AnyEventFunction = (...args: any) => void;
  * Converts an EventFunction type to an EventHandler type by changing
  * the return type to allow `Promise<void>`.
  * This allows for handlers to be implemented as async functions.
- * @template EventFunction - an Event function (see {@link AnyEventFunction}).
+ * @typeParam EventFunction - an Event function (see {@link AnyEventFunction}).
  */
 export type EventHandler<EventFunction extends AnyEventFunction> = (
     ...args: Parameters<EventFunction>
@@ -32,7 +32,7 @@ export type AnyEventHandler = EventHandler<AnyEventFunction>;
 /**
  * Wrapper around an EventHandler to indicate that it should be used only one
  * time, then automatuically cancel its own subscription.
- * @template EventFunction - an Event function (see {@link AnyEventFunction}).
+ * @typeParam EventFunction - an Event function (see {@link AnyEventFunction}).
  */
 export interface OnceEventHandler<EventFunction extends AnyEventFunction> {
     /**
@@ -50,7 +50,7 @@ export interface OnceEventHandler<EventFunction extends AnyEventFunction> {
  * Events interface.
  * An Events interface is one where the types of all string properties are
  * non-optional `AnyEventFunction`.
- * @template Events - A potentially valid Events interface.
+ * @typeParam Events - A potentially valid Events interface.
  */
 export type EventsConstraint<Events> = Record<
     Extract<keyof Events, string | symbol>,
@@ -59,7 +59,7 @@ export type EventsConstraint<Events> = Record<
 
 /**
  * Extracts the type of all event names from an Events interface.
- * @template Events - an Events interface (see {@link EventsConstraint}).
+ * @typeParam Events - an Events interface (see {@link EventsConstraint}).
  */
 export type EventNames<Events extends EventsConstraint<Events>> = Extract<
     keyof Events,
@@ -73,7 +73,7 @@ export type EventNames<Events extends EventsConstraint<Events>> = Extract<
  * must be a valid event handler for that event name.
  * This interface also allows for special {@link OnceEventHandler} wrappers
  * around event handler functions to indicate a one-time handler.
- * @template Events - an Events interface (see {@link EventsConstraint}).
+ * @typeParam Events - an Events interface (see {@link EventsConstraint}).
  */
 export type EventHandlers<Events extends EventsConstraint<Events>> = {
     [P in EventNames<Events>]:
@@ -90,7 +90,7 @@ export type SubscriptionCanceller = () => void;
  * A source of events, which supports subscriptions to those events.
  * This interface exposes only the means to subscribe to events, without
  * exposing the means to publish events.
- * @template Events - an Events interface (see {@link EventsConstraint}).
+ * @typeParam Events - an Events interface (see {@link EventsConstraint}).
  */
 export interface EventSource<Events extends EventsConstraint<Events>> {
     /**
@@ -143,11 +143,41 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
 }
 
 /**
- * Helper type used to extract an EventHandlers interface from any {@link EventSource}.
- * this is useful, for example, if you need to reference the function signature
- * type of one of the event handlers of an EventSource
+ * Helper type used to extract the `Events` interface from any {@link EventSource}.
  *
- * @template T - An EventSource type.
+ * This could be used to define another `EventSource` (or extension/implementation
+ * of `EventSource`) type with the same exact `Events` definitions.
+ *
+ * NOTE: This returns the original interface of the `Events` from the definition
+ * of the `EventSource`. There is a subtle difference between the
+ * `Events` type and the corresponding `EventHandlers` type:
+ * - `Events`: All event signatures have a return type of `void`.
+ * - `EventHandlers`: All event handler signatures have a return type
+ *    of `void | Promise<void>` to support `async` event handler
+ *    implementations.
+ *
+ * @typeParam T - An {@link EventSource} type.
+ */
+export type EventsType<T extends EventSource<{}>> = T extends EventSource<
+    infer Events
+>
+    ? Events
+    : never;
+
+/**
+ * Helper type used to extract an `EventHandlers` interface from any {@link EventSource}.
+ * this is useful, for example, if you need to reference the function signature
+ * type of one of the event handlers of an `EventSource`
+ *
+ * NOTE: This does NOT return the original interface of the `Events` from the
+ * definition of the `EventSource`. There is a subtle difference between the
+ * `Events` type and the corresponding `EventHandlers` type:
+ * - `Events`: All event signatures have a return type of `void`.
+ * - `EventHandlers`: All event handler signatures have a return type
+ *    of `void | Promise<void>` to support `async` event handler
+ *    implementations.
+ *
+ * @typeParam T - An {@link EventSource} type.
  * @example
  * ```ts
  * // An `EventSource` where you don't have direct knowledge of the Events
@@ -162,7 +192,7 @@ export interface EventSource<Events extends EventsConstraint<Events>> {
  * ```
  */
 export type EventHandlersType<
-    T extends EventSource<any>
+    T extends EventSource<{}>
 > = T extends EventSource<infer Events>
     ? {
           [P in EventNames<Events>]: EventHandler<Events[P]>;
@@ -176,9 +206,9 @@ export type EventHandlersType<
  * {@link EventEmitter} without explicitly knowing the Events interface that
  * was used.
  *
- * See also: {@link EventEmitter#asEventSource}
+ * See also: {@link EventEmitter#toEventSource}
  *
- * @template T - An EventSource type.
+ * @typeParam T - An {@link EventSource} type.
  * @example
  * ```
  * class MyClass {
@@ -190,13 +220,13 @@ export type EventHandlersType<
  *
  *     // Use EventSourceType<> to extract the correct EventSource type from
  *     // the private `eventEmitter`.
- *     public getEventSource(): EventSourceType<MyClass["eventEmitter"]> {
+ *     public toEventSource(): EventSourceType<MyClass["eventEmitter"]> {
  *         return this.eventEmitter;
  *     }
  *  }
  * ```
  */
-export type EventSourceType<T extends EventSource<any>> = T extends EventSource<
+export type EventSourceType<T extends EventSource<{}>> = T extends EventSource<
     infer Events
 >
     ? EventSource<Events>

@@ -26,9 +26,9 @@ const eventEmitter = new EventEmitter<Events>();
     }>(eventEmitter.emit);
 }
 
-// asEventSource()
+// toEventSource()
 {
-    expectType<EventSource<Events>>(eventEmitter.asEventSource());
+    expectType<EventSource<Events>>(eventEmitter.toEventSource());
 }
 
 // subscribe()

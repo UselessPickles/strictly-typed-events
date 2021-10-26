@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.8] 2021-10-28
+
+### Added
+
+-   New `EventEmitter.toEventSource()` method that replaces `EventEmitter.asEventSource()`.
+    This new method creates and returns a new implementation of `EventSource`
+    (instead of simply typecasting) to avoid unintentionally exposing the means to
+    emit events at runtime.
+-   New `EventsType` helper type that is similar to `EventHandlersType`, but returns
+    the original raw `Events` interface of an `EventSource` type.
+
+### Changed
+
+-   Misc. documentation fixes/improvements.
+
+### Removed
+
+-   Removed `EventEmitter.asEventSource()`. Replaced by `EventEmitter.toEventSource()`.
+
+### Fixed
+
+-   Helper types `EventHandlersType` and `EventSourceType` now actually work.
+    Verified via new type tests.
+
 ## [0.0.7] 2021-03-16
 
 ### Added
@@ -83,6 +107,7 @@ TODO:
 -   Write good README content (sorry; source code documentation will have to suffice for now).
 -   Use rollup to bundle code?
 
+[0.0.8]: https://github.com/UselessPickles/strictly-typed-events/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/UselessPickles/strictly-typed-events/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/UselessPickles/strictly-typed-events/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/UselessPickles/strictly-typed-events/compare/v0.0.4...v0.0.5

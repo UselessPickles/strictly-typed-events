@@ -11,14 +11,16 @@ import {
 /**
  * Convenient base class to be inherited to make its parent a fully functional
  * {@link EventSource} implementation.
+ *
  * When inheriting from this class, your class will gain:
  * - A protected [emit]{@link WithEventEmitter#emit} property for emitting
  *   events to subscribers (just like {@link EventEmitter#emit}).
- * - A public [subscribe]{@link WithEventEmitter#subscribe} method for subscribing
- *   to your events.
+ * - Public methods for subscribing to your events (all methods of {@link EventSource}).
+ *
  * NOTE: You must explicitly provide an interface for your events as the Events
  *       template parameter.
- * @template Events - An interface/type containing only methods, where each method
+ *
+ * @typeParam Events - An interface/type containing only methods, where each method
  *           name is the event name, and the method signatures is the signature
  *           for handlers of the event.
  * @example
@@ -66,6 +68,7 @@ export class WithEventEmitter<Events extends EventsConstraint<Events>>
      * For each event defined by the Events interface, a method of the same name,
      * and same parameters signature, exists on this object that will call
      * all subscribed handlers of that event.
+     *
      * NOTE: The return type of every method on this proxy is `void`, regardless
      *       of the return type for the corresponding event.
      */
