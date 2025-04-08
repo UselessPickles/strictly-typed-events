@@ -1,5 +1,5 @@
 [![npm version](https://img.shields.io/npm/v/strictly-typed-events.svg)](https://www.npmjs.com/package/strictly-typed-events)
-[![Join the chat at https://gitter.im/ts-enum-util/Lobby](https://badges.gitter.im/UselessPickles/strictly-typed-events//Lobby.svg)](https://gitter.im/UselessPickles/strictly-typed-events)
+[![Join the chat at https://gitter.im/strictly-typed-events/Lobby](https://badges.gitter.im/strictly-typed-events/Lobby.svg)](https://gitter.im/strictly-typed-events/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://app.travis-ci.com/UselessPickles/strictly-typed-events.svg?branch=main)](https://app.travis-ci.com/UselessPickles/strictly-typed-events)
 [![Coverage Status](https://coveralls.io/repos/github/UselessPickles/strictly-typed-events/badge.svg?branch=main)](https://coveralls.io/github/UselessPickles/strictly-typed-events?branch=main)
 
