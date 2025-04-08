@@ -210,7 +210,7 @@ class Foo {
     }>();
 
     // Also expose your `EventEmitter` publicly, but as an
-    // `EventSource` implementationthat only exposes the
+    // `EventSource` implementation that only exposes the
     // ability subscribe to events.
     public readonly events = this.emitter.toEventSource();
 
