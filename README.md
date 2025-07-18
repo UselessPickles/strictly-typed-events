@@ -214,7 +214,7 @@ class Foo {
     // ability subscribe to events.
     public readonly events = this.emitter.toEventSource();
 
-    public constructor(private readonly name: string) {}
+    public constructor(private name: string) {}
 
     public setName(newName: string): void {
         const oldName = this.name;
